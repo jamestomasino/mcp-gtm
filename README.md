@@ -25,7 +25,7 @@ Or configure in your MCP client:
 }
 ```
 
-## Tools (31 total)
+## Tools (41 total)
 
 | Tool | Description |
 |------|-------------|

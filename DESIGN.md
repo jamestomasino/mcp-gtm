@@ -529,10 +529,10 @@ LLM → gtm_diff_containers(file_a="staging.json", file_b="prod.json")
 - [x] Read-only mode via `GTM_READ_ONLY` env var
 - [ ] Publish to npm
 
-#### Phase 4: Advanced — 🔲 IN PROGRESS
-- [ ] Server-side GTM entities (zones, clients, transformations)
-- [ ] Folder management improvements (move triggers/variables to folders)
-- [ ] Custom template support
+#### Phase 4: Advanced — ✅ COMPLETE
+- [x] Server-side GTM entities (zones, clients, transformations) — schemas, store getters, 6 read tools
+- [x] Folder management improvements (move triggers/variables to folders) — 2 new tools
+- [x] Custom template support — schema, store getter, 2 read tools
 - [x] Read-only mode config flag (`GTM_READ_ONLY` env var)
 
 ### Tool Inventory (31 tools, 4 resources, 4 prompts)
