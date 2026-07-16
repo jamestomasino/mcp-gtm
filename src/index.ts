@@ -11,6 +11,7 @@ import { registerVariableTools } from "./tools/variables";
 import { registerFolderTools } from "./tools/folders";
 import { registerAnalysisTools } from "./tools/analysis";
 import { registerExportTools } from "./tools/export";
+import { registerServerSideTools } from "./tools/serverSide";
 
 const store = new ContainerStore();
 
@@ -36,6 +37,7 @@ const allTools = [
   ...registerFolderTools(store),
   ...registerAnalysisTools(store),
   ...registerExportTools(store),
+  ...registerServerSideTools(store),
 ];
 
 const toolsToRegister = readOnly ? allTools.filter((t) => !isWriteTool(t.name)) : allTools;

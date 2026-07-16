@@ -22,3 +22,6 @@ export type { Container } from "./container";
 
 export { GtmExportSchema, ContainerVersionSchema } from "./export";
 export type { GtmExport, ContainerVersion } from "./export";
+
+export { ZoneSchema, ClientSchema, TransformationSchema } from "./serverSide";
+export type { Zone, Client, Transformation } from "./serverSide";

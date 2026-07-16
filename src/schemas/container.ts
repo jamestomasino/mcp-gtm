@@ -3,6 +3,7 @@ import { TagSchema } from "./tag";
 import { TriggerSchema } from "./trigger";
 import { VariableSchema, BuiltInVariableSchema } from "./variable";
 import { FolderSchema } from "./folder";
+import { ZoneSchema, ClientSchema, TransformationSchema } from "./serverSide";
 
 /**
  * ContainerSchema — represents the container inside a container version.
@@ -19,9 +20,9 @@ export const ContainerSchema = z.object({
   userDefinedVariable: z.array(VariableSchema).optional().default([]),
   folder: z.array(FolderSchema).optional().default([]),
   builtInVariable: z.array(BuiltInVariableSchema).optional().default([]),
-  client: z.array(z.any()).optional().default([]),
-  zone: z.array(z.any()).optional().default([]),
-  transformation: z.array(z.any()).optional().default([]),
+  client: z.array(ClientSchema).optional().default([]),
+  zone: z.array(ZoneSchema).optional().default([]),
+  transformation: z.array(TransformationSchema).optional().default([]),
   customTemplate: z.array(z.any()).optional().default([]),
   gtagConfig: z.array(z.any()).optional().default([]),
 }).passthrough();

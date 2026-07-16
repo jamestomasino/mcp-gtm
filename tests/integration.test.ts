@@ -12,6 +12,7 @@ import { registerVariableTools } from "../src/tools/variables";
 import { registerFolderTools } from "../src/tools/folders";
 import { registerAnalysisTools } from "../src/tools/analysis";
 import { registerExportTools } from "../src/tools/export";
+import { registerServerSideTools } from "../src/tools/serverSide";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = join(__dirname, "fixtures");
@@ -32,6 +33,7 @@ function createServer(store: ContainerStore) {
     ...registerFolderTools(store),
     ...registerAnalysisTools(store),
     ...registerExportTools(store),
+    ...registerServerSideTools(store),
   ];
 
   for (const tool of allTools) {
@@ -78,7 +80,7 @@ describe("MCP protocol integration", () => {
       try {
         const tools = await client.listTools();
         const toolNames = tools.tools.map((t) => t.name);
-        expect(toolNames.length).toBe(33);
+        expect(toolNames.length).toBe(39);
         expect(toolNames).toContain("gtm_load_container");
         expect(toolNames).toContain("gtm_list_tags");
         expect(toolNames).toContain("gtm_create_tag");
