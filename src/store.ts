@@ -307,6 +307,32 @@ export class ContainerStore {
     return true;
   }
 
+  /** Move a trigger to a folder (or unassign by passing null) */
+  moveTriggerToFolder(triggerId: string, folderId: string | null): boolean {
+    const index = this.triggers.findIndex((t) => t.triggerId === triggerId);
+    if (index === -1) return false;
+    const updated = { ...this.triggers[index], parentFolderId: folderId ?? undefined };
+    this.data.containerVersion.container.trigger = [
+      ...this.triggers.slice(0, index),
+      updated,
+      ...this.triggers.slice(index + 1),
+    ];
+    return true;
+  }
+
+  /** Move a variable to a folder (or unassign by passing null) */
+  moveVariableToFolder(variableId: string, folderId: string | null): boolean {
+    const index = this.variables.findIndex((v) => v.variableId === variableId);
+    if (index === -1) return false;
+    const updated = { ...this.variables[index], parentFolderId: folderId ?? undefined };
+    this.data.containerVersion.container.userDefinedVariable = [
+      ...this.variables.slice(0, index),
+      updated,
+      ...this.variables.slice(index + 1),
+    ];
+    return true;
+  }
+
   private assertLoaded(): never | void {
     if (!this._data) {
       throw new Error("No container loaded. Call gtm_load_container first.");

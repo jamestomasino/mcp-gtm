@@ -112,4 +112,60 @@ describe("Folder tools", () => {
       await expect(tool.handler({ tag_id: "999", folder_id: "1" })).rejects.toThrow("Tag not found");
     });
   });
+
+  describe("gtm_move_trigger_to_folder", () => {
+    it("should move a trigger to a folder", async () => {
+      const result = await tools.find((t) => t.name === "gtm_move_trigger_to_folder")!.handler({
+        trigger_id: "1",
+        folder_id: "1",
+      });
+      const text = JSON.parse(result.content[0].text);
+      expect(text.status).toBe("moved");
+      expect(text.trigger_id).toBe("1");
+      expect(text.folder_id).toBe("1");
+    });
+
+    it("should unassign a trigger from folder", async () => {
+      const result = await tools.find((t) => t.name === "gtm_move_trigger_to_folder")!.handler({
+        trigger_id: "1",
+        folder_id: null,
+      });
+      const text = JSON.parse(result.content[0].text);
+      expect(text.status).toBe("moved");
+      expect(text.folder_id).toBeNull();
+    });
+
+    it("should throw when trigger not found", async () => {
+      const tool = tools.find((t) => t.name === "gtm_move_trigger_to_folder")!;
+      await expect(tool.handler({ trigger_id: "999", folder_id: "1" })).rejects.toThrow("Trigger not found");
+    });
+  });
+
+  describe("gtm_move_variable_to_folder", () => {
+    it("should move a variable to a folder", async () => {
+      const result = await tools.find((t) => t.name === "gtm_move_variable_to_folder")!.handler({
+        variable_id: "1",
+        folder_id: "1",
+      });
+      const text = JSON.parse(result.content[0].text);
+      expect(text.status).toBe("moved");
+      expect(text.variable_id).toBe("1");
+      expect(text.folder_id).toBe("1");
+    });
+
+    it("should unassign a variable from folder", async () => {
+      const result = await tools.find((t) => t.name === "gtm_move_variable_to_folder")!.handler({
+        variable_id: "1",
+        folder_id: null,
+      });
+      const text = JSON.parse(result.content[0].text);
+      expect(text.status).toBe("moved");
+      expect(text.folder_id).toBeNull();
+    });
+
+    it("should throw when variable not found", async () => {
+      const tool = tools.find((t) => t.name === "gtm_move_variable_to_folder")!;
+      await expect(tool.handler({ variable_id: "999", folder_id: "1" })).rejects.toThrow("Variable not found");
+    });
+  });
 });

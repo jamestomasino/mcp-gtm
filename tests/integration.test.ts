@@ -78,7 +78,7 @@ describe("MCP protocol integration", () => {
       try {
         const tools = await client.listTools();
         const toolNames = tools.tools.map((t) => t.name);
-        expect(toolNames.length).toBe(31);
+        expect(toolNames.length).toBe(33);
         expect(toolNames).toContain("gtm_load_container");
         expect(toolNames).toContain("gtm_list_tags");
         expect(toolNames).toContain("gtm_create_tag");

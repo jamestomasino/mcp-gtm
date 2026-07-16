@@ -86,5 +86,35 @@ export function registerFolderTools(store: ContainerStore) {
         };
       },
     },
+    {
+      name: "gtm_move_trigger_to_folder",
+      description: "Move a trigger to a folder, or unassign it by setting folder_id to null.",
+      parameters: z.object({
+        trigger_id: z.string().describe("Trigger ID to move"),
+        folder_id: z.string().nullable().describe("Target folder ID, or null to unassign from folder"),
+      }),
+      handler: async ({ trigger_id, folder_id }: { trigger_id: string; folder_id: string | null }) => {
+        const moved = store.moveTriggerToFolder(trigger_id, folder_id);
+        if (!moved) throw new Error(`Trigger not found: ${trigger_id}`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "moved", trigger_id, folder_id }, null, 2) }],
+        };
+      },
+    },
+    {
+      name: "gtm_move_variable_to_folder",
+      description: "Move a variable to a folder, or unassign it by setting folder_id to null.",
+      parameters: z.object({
+        variable_id: z.string().describe("Variable ID to move"),
+        folder_id: z.string().nullable().describe("Target folder ID, or null to unassign from folder"),
+      }),
+      handler: async ({ variable_id, folder_id }: { variable_id: string; folder_id: string | null }) => {
+        const moved = store.moveVariableToFolder(variable_id, folder_id);
+        if (!moved) throw new Error(`Variable not found: ${variable_id}`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "moved", variable_id, folder_id }, null, 2) }],
+        };
+      },
+    },
   ];
 }
