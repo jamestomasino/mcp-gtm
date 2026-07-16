@@ -90,6 +90,13 @@ Pre-built prompt templates for common workflows:
 - Diffable and version-controllable
 - Import back into GTM with one click
 
+## Configuration
+
+| Environment Variable | Description |
+|---|---|
+| `GTM_CONTAINER_FILE` | Path to a GTM export JSON file. Auto-loaded on startup. |
+| `GTM_READ_ONLY` | Set to any value to disable all write tools (create, update, delete, move, export). Only read and analysis tools will be available. |
+
 ## Development
 
 ```bash

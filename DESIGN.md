@@ -516,7 +516,7 @@ LLM → gtm_diff_containers(file_a="staging.json", file_b="prod.json")
 - [x] Export tool (write state to JSON file)
 - [x] Round-trip tests (load → modify → export → reload)
 
-#### Phase 3: Analysis & Polish — ⚠️ MOSTLY COMPLETE
+#### Phase 3: Analysis & Polish — ✅ COMPLETE
 - [x] Analysis tools (dependencies, unused entities, orphaned triggers, validate)
 - [x] Container diff tool
 - [x] Full validation tool
@@ -524,15 +524,16 @@ LLM → gtm_diff_containers(file_a="staging.json", file_b="prod.json")
 - [x] MCP Prompts (4: inspect_container, audit_container, debug_tag, compare_containers)
 - [x] Auto-load from `GTM_CONTAINER_FILE` env var
 - [x] README.md with full documentation
-- [ ] Per-tool unit tests (`tests/tools/` directory is empty)
-- [ ] MCP protocol integration tests
+- [x] Per-tool unit tests (7 tool groups, 75 tests)
+- [x] MCP protocol integration tests (6 tests)
+- [x] Read-only mode via `GTM_READ_ONLY` env var
 - [ ] Publish to npm
 
-#### Phase 4: Advanced — 🔲 NOT STARTED
+#### Phase 4: Advanced — 🔲 IN PROGRESS
 - [ ] Server-side GTM entities (zones, clients, transformations)
 - [ ] Folder management improvements (move triggers/variables to folders)
 - [ ] Custom template support
-- [ ] Read-only mode config flag
+- [x] Read-only mode config flag (`GTM_READ_ONLY` env var)
 
 ### Tool Inventory (31 tools, 4 resources, 4 prompts)
 
