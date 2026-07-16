@@ -160,7 +160,23 @@ describe("MCP protocol integration", () => {
         const validateText = JSON.parse(validateResult.content[0].text);
         expect(validateText.valid).toBe(true);
 
-        // Step 6: Export
+        // Step 6: Check server-side entities (empty for web container)
+        const zonesResult = await client.callTool({
+          name: "gtm_list_zones",
+          arguments: {},
+        });
+        const zonesText = JSON.parse(zonesResult.content[0].text);
+        expect(zonesText.total_count).toBe(0);
+
+        // Step 7: Check custom templates (empty for web container)
+        const templatesResult = await client.callTool({
+          name: "gtm_list_custom_templates",
+          arguments: {},
+        });
+        const templatesText = JSON.parse(templatesResult.content[0].text);
+        expect(templatesText.total_count).toBe(0);
+
+        // Step 8: Export
         const exportPath = join(FIXTURES_DIR, "integration_export.json");
         const exportResult = await client.callTool({
           name: "gtm_export_container",
