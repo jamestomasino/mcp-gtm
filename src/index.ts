@@ -19,6 +19,14 @@ const server = new McpServer({
   version: "0.1.0",
 });
 
+// Read-only mode: skip write tools when GTM_READ_ONLY is set
+const readOnly = process.env.GTM_READ_ONLY !== undefined;
+const writeToolPrefixes = ["gtm_create_", "gtm_update_", "gtm_delete_", "gtm_move_", "gtm_export_"];
+
+function isWriteTool(name: string): boolean {
+  return writeToolPrefixes.some((prefix) => name.startsWith(prefix));
+}
+
 // Register all tool groups
 const allTools = [
   ...registerContainerTools(store),
@@ -30,8 +38,10 @@ const allTools = [
   ...registerExportTools(store),
 ];
 
+const toolsToRegister = readOnly ? allTools.filter((t) => !isWriteTool(t.name)) : allTools;
+
 // Register each tool with the MCP server
-for (const tool of allTools) {
+for (const tool of toolsToRegister) {
   server.tool(
     tool.name,
     tool.description,
