@@ -1,0 +1,41 @@
+{
+  "name": "mcp-gtm",
+  "version": "0.1.0",
+  "description": "MCP server for Google Tag Manager container JSON files",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-gtm": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "tsc"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.9",
+    "vite-tsconfig-paths": "^5.1.4"
+  },
+  "keywords": [
+    "mcp",
+    "google-tag-manager",
+    "gtm",
+    "tag-manager",
+    "model-context-protocol"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist/",
+    "src/",
+    "!dist/**/*.map"
+  ]
+}

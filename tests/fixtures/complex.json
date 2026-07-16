@@ -1,0 +1,167 @@
+{
+  "exportTime": "2026-07-16T11:00:00.000Z",
+  "containerVersion": {
+    "accountId": "12345678",
+    "containerId": "87654321",
+    "containerVersionId": "2",
+    "fingerprint": "def456",
+    "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/12345678/containers/87654321",
+    "container": {
+      "name": "Production Container",
+      "usageContext": [1],
+      "defaultTimezone": "America/Chicago",
+      "description": "Main production GTM container",
+      "tag": [
+        {
+          "tagId": "1",
+          "fingerprint": "fp_prod1",
+          "name": "GA4 Page View",
+          "type": "gaawe",
+          "enabled": true,
+          "parameter": [
+            { "key": "configurationId", "value": "G-PROD5678" },
+            { "key": "eventName", "value": "page_view" }
+          ],
+          "firingTriggerId": ["1"],
+          "blockingTriggerId": [],
+          "parentFolderId": "1"
+        },
+        {
+          "tagId": "2",
+          "fingerprint": "fp_prod2",
+          "name": "GA4 Button Click",
+          "type": "gaawe",
+          "enabled": true,
+          "parameter": [
+            { "key": "configurationId", "value": "G-PROD5678" },
+            { "key": "eventName", "value": "button_click" }
+          ],
+          "firingTriggerId": ["2"],
+          "blockingTriggerId": [],
+          "parentFolderId": "1"
+        },
+        {
+          "tagId": "4",
+          "fingerprint": "fp_prod4",
+          "name": "Google Ads Conversion",
+          "type": "awct",
+          "enabled": true,
+          "parameter": [
+            { "key": "conversionId", "value": "AW-123456" },
+            { "key": "conversionLabel", "value": "abcDEFghijkl" }
+          ],
+          "firingTriggerId": ["3"],
+          "blockingTriggerId": [],
+          "parentFolderId": "3",
+          "notes": "New conversion tag not in simple container"
+        },
+        {
+          "tagId": "5",
+          "fingerprint": "fp_prod5",
+          "name": "Facebook Pixel",
+          "type": "html",
+          "enabled": true,
+          "parameter": [
+            { "key": "html", "value": "<script>fbq('track', 'PageView');</script>" }
+          ],
+          "firingTriggerId": ["1"],
+          "blockingTriggerId": [],
+          "parentFolderId": "3"
+        }
+      ],
+      "trigger": [
+        {
+          "triggerId": "1",
+          "fingerprint": "fp_prodtrig1",
+          "name": "All Pages",
+          "type": "pageview",
+          "filter": []
+        },
+        {
+          "triggerId": "2",
+          "fingerprint": "fp_prodtrig2",
+          "name": "Button Click",
+          "type": "click",
+          "filter": [
+            {
+              "type": "equals",
+              "parameter": [
+                { "key": "arg0", "type": "field", "value": { "field": "clickClasses" } },
+                { "key": "arg1", "type": "template", "value": "btn-primary" }
+              ]
+            }
+          ]
+        },
+        {
+          "triggerId": "3",
+          "fingerprint": "fp_prodtrig3",
+          "name": "Purchase Confirmation",
+          "type": "custom",
+          "filter": [
+            {
+              "type": "equals",
+              "parameter": [
+                { "key": "arg0", "type": "field", "value": { "field": "event" } },
+                { "key": "arg1", "type": "template", "value": "purchase" }
+              ]
+            }
+          ],
+          "notes": "New trigger for purchase events"
+        }
+      ],
+      "userDefinedVariable": [
+        {
+          "variableId": "1",
+          "fingerprint": "fp_prodvar1",
+          "name": "Page URL",
+          "type": "u",
+          "parameter": [
+            { "key": "dataLayerVersion", "value": "2" },
+            { "key": "urlField", "value": { "field": "HOST" } }
+          ]
+        },
+        {
+          "variableId": "2",
+          "fingerprint": "fp_prodvar2",
+          "name": "Event Name",
+          "type": "v",
+          "parameter": [
+            { "key": "dataLayerVersion", "value": "2" },
+            { "key": "name", "value": "event" }
+          ]
+        },
+        {
+          "variableId": "3",
+          "fingerprint": "fp_prodvar3",
+          "name": "Transaction Value",
+          "type": "v",
+          "parameter": [
+            { "key": "dataLayerVersion", "value": "2" },
+            { "key": "name", "value": "transaction_value" }
+          ],
+          "notes": "New variable for tracking revenue"
+        }
+      ],
+      "folder": [
+        {
+          "folderId": "1",
+          "fingerprint": "fp_prodfolder1",
+          "name": "Analytics",
+          "tagId": ["1", "2"]
+        },
+        {
+          "folderId": "3",
+          "fingerprint": "fp_prodfolder3",
+          "name": "Advertising",
+          "tagId": ["4", "5"]
+        }
+      ],
+      "builtInVariable": [
+        { "name": "Page Path", "type": "pagePath" },
+        { "name": "Page URL", "type": "pageUrl" },
+        { "name": "Click Element", "type": "clickElement" },
+        { "name": "Page Hostname", "type": "pageHostname" }
+      ]
+    }
+  }
+}

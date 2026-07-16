@@ -1,0 +1,137 @@
+{
+  "exportTime": "2026-07-16T10:00:00.000Z",
+  "containerVersion": {
+    "accountId": "12345678",
+    "containerId": "87654321",
+    "containerVersionId": "1",
+    "fingerprint": "abc123",
+    "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/12345678/containers/87654321",
+    "container": {
+      "name": "Test Web Container",
+      "usageContext": [1],
+      "defaultTimezone": "America/New_York",
+      "tag": [
+        {
+          "tagId": "1",
+          "fingerprint": "fp_tag1",
+          "name": "GA4 Page View",
+          "type": "gaawe",
+          "enabled": true,
+          "parameter": [
+            { "key": "configurationId", "value": "G-TEST1234" },
+            { "key": "eventName", "value": "page_view" }
+          ],
+          "firingTriggerId": ["1"],
+          "blockingTriggerId": [],
+          "parentFolderId": "1",
+          "notes": "Fires on every page view"
+        },
+        {
+          "tagId": "2",
+          "fingerprint": "fp_tag2",
+          "name": "GA4 Button Click",
+          "type": "gaawe",
+          "enabled": true,
+          "parameter": [
+            { "key": "configurationId", "value": "G-TEST1234" },
+            { "key": "eventName", "value": "button_click" }
+          ],
+          "firingTriggerId": ["2"],
+          "blockingTriggerId": [],
+          "parentFolderId": "1",
+          "notes": "Tracks button clicks"
+        },
+        {
+          "tagId": "3",
+          "fingerprint": "fp_tag3",
+          "name": "Custom HTML Consent Banner",
+          "type": "html",
+          "enabled": false,
+          "parameter": [
+            { "key": "html", "value": "<div id='consent'>...</div>" }
+          ],
+          "firingTriggerId": ["1"],
+          "blockingTriggerId": [],
+          "notes": "Disabled consent banner"
+        }
+      ],
+      "trigger": [
+        {
+          "triggerId": "1",
+          "fingerprint": "fp_trig1",
+          "name": "All Pages",
+          "type": "pageview",
+          "filter": [],
+          "parentFolderId": "2",
+          "notes": "Fires on all page views"
+        },
+        {
+          "triggerId": "2",
+          "fingerprint": "fp_trig2",
+          "name": "Button Click",
+          "type": "click",
+          "filter": [
+            {
+              "type": "equals",
+              "parameter": [
+                { "key": "arg0", "type": "field", "value": { "field": "clickClasses" } },
+                { "key": "arg1", "type": "template", "value": "btn-primary" }
+              ]
+            }
+          ],
+          "parentFolderId": "2",
+          "notes": "Fires on primary button clicks"
+        },
+        {
+          "triggerId": "3",
+          "fingerprint": "fp_trig3",
+          "name": "Form Submit",
+          "type": "form",
+          "filter": [],
+          "notes": "Orphaned trigger - not used by any tag"
+        }
+      ],
+      "userDefinedVariable": [
+        {
+          "variableId": "1",
+          "fingerprint": "fp_var1",
+          "name": "Page URL",
+          "type": "u",
+          "parameter": [
+            { "key": "dataLayerVersion", "value": "2" },
+            { "key": "urlField", "value": { "field": "HOST" } }
+          ]
+        },
+        {
+          "variableId": "2",
+          "fingerprint": "fp_var2",
+          "name": "Event Name",
+          "type": "v",
+          "parameter": [
+            { "key": "dataLayerVersion", "value": "2" },
+            { "key": "name", "value": "event" }
+          ]
+        }
+      ],
+      "folder": [
+        {
+          "folderId": "1",
+          "fingerprint": "fp_folder1",
+          "name": "Analytics",
+          "tagId": ["1", "2"]
+        },
+        {
+          "folderId": "2",
+          "fingerprint": "fp_folder2",
+          "name": "Triggers",
+          "tagId": []
+        }
+      ],
+      "builtInVariable": [
+        { "name": "Page Path", "type": "pagePath" },
+        { "name": "Page URL", "type": "pageUrl" },
+        { "name": "Click Element", "type": "clickElement" }
+      ]
+    }
+  }
+}

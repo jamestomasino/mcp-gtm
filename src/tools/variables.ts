@@ -1,0 +1,131 @@
+import { z } from "zod";
+import type { ContainerStore } from "../store";
+import { getVariableTypeName } from "../utils/typeCodes";
+
+/** Variable tools (CRUD + built-in) */
+export function registerVariableTools(store: ContainerStore) {
+  return [
+    {
+      name: "gtm_list_variables",
+      description: "List all user-defined variables with summary info. Requires a loaded container.",
+      parameters: z.object({}),
+      handler: async () => {
+        const variables = store.variables.map((v) => ({
+          variable_id: v.variableId,
+          name: v.name,
+          type: v.type,
+          type_name: getVariableTypeName(v.type),
+          notes: v.notes ?? null,
+        }));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ variables, total_count: variables.length }, null, 2) }],
+        };
+      },
+    },
+    {
+      name: "gtm_get_variable",
+      description: "Get variable details by variable_id or name. Requires a loaded container.",
+      parameters: z.object({
+        variable_id: z.string().optional().describe("Variable ID to look up"),
+        name: z.string().optional().describe("Variable name to look up (alternative to variable_id)"),
+      }),
+      handler: async ({ variable_id, name }: { variable_id?: string; name?: string }) => {
+        let variable;
+        if (variable_id) {
+          variable = store.variables.find((v) => v.variableId === variable_id);
+        } else if (name) {
+          variable = store.variables.find((v) => v.name === name);
+        }
+        if (!variable) {
+          throw new Error(`Variable not found. Provided: variable_id=${variable_id ?? "none"}, name=${name ?? "none"}`);
+        }
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({
+            ...variable,
+            type_name: getVariableTypeName(variable.type),
+          }, null, 2) }],
+        };
+      },
+    },
+    {
+      name: "gtm_create_variable",
+      description: "Create a new variable. Validates against GTM schema, auto-assigns variableId if not provided.",
+      parameters: z.object({
+        name: z.string().describe("Variable name"),
+        type: z.string().describe("Variable type code (e.g. v for Data Layer, u for URL, jsm for Custom JS)"),
+        notes: z.string().optional().describe("Notes for the variable"),
+        parameters: z.array(z.object({
+          key: z.string(),
+          value: z.union([z.string(), z.number(), z.boolean()]),
+          type: z.string().optional(),
+        })).optional().describe("Variable configuration parameters"),
+      }),
+      handler: async (params: Record<string, unknown>) => {
+        const variable = store.createVariable({
+          name: params.name,
+          type: params.type,
+          notes: params.notes,
+          parameter: params.parameters,
+        });
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({
+            status: "created",
+            variable,
+            type_name: getVariableTypeName(variable.type),
+          }, null, 2) }],
+        };
+      },
+    },
+    {
+      name: "gtm_update_variable",
+      description: "Update an existing variable by variable_id.",
+      parameters: z.object({
+        variable_id: z.string().describe("Variable ID to update"),
+        name: z.string().optional().describe("New variable name"),
+        notes: z.string().optional().describe("New notes"),
+        parameters: z.array(z.object({
+          key: z.string(),
+          value: z.union([z.string(), z.number(), z.boolean()]),
+          type: z.string().optional(),
+        })).optional().describe("Updated variable configuration parameters"),
+      }),
+      handler: async ({ variable_id, ...updates }: { variable_id: string; [key: string]: unknown }) => {
+        const variable = store.updateVariable(variable_id, {
+          ...(updates.name !== undefined && { name: updates.name as string }),
+          ...(updates.notes !== undefined && { notes: updates.notes as string }),
+          ...(updates.parameters !== undefined && { parameter: updates.parameters as any }),
+        } as any);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "updated", variable }, null, 2) }],
+        };
+      },
+    },
+    {
+      name: "gtm_delete_variable",
+      description: "Delete a variable from the container by variable_id.",
+      parameters: z.object({
+        variable_id: z.string().describe("Variable ID to delete"),
+      }),
+      handler: async ({ variable_id }: { variable_id: string }) => {
+        const deleted = store.deleteVariable(variable_id);
+        if (!deleted) throw new Error(`Variable not found: ${variable_id}`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "deleted", variable_id }, null, 2) }],
+        };
+      },
+    },
+    {
+      name: "gtm_list_builtin_variables",
+      description: "List enabled built-in variables. Requires a loaded container.",
+      parameters: z.object({}),
+      handler: async () => {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({
+            builtInVariables: store.builtInVariables,
+            total_count: store.builtInVariables.length,
+          }, null, 2) }],
+        };
+      },
+    },
+  ];
+}
