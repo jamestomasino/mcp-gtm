@@ -1,11 +1,23 @@
 {
   "name": "mcp-gtm",
   "version": "0.1.0",
-  "description": "MCP server for Google Tag Manager container JSON files",
+  "description": "MCP server for Google Tag Manager container JSON files. Zero auth, fully offline.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "mcp-gtm": "dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1jehuang/mcp-gtm"
+  },
+  "homepage": "https://github.com/1jehuang/mcp-gtm#readme",
+  "bugs": {
+    "url": "https://github.com/1jehuang/mcp-gtm/issues"
+  },
+  "author": "Jcode",
+  "engines": {
+    "node": ">=18.0.0"
   },
   "scripts": {
     "build": "tsc",
@@ -30,7 +42,10 @@
     "google-tag-manager",
     "gtm",
     "tag-manager",
-    "model-context-protocol"
+    "model-context-protocol",
+    "claude",
+    "cursor",
+    "llm"
   ],
   "license": "MIT",
   "files": [
