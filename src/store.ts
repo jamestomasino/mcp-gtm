@@ -3,7 +3,7 @@ import { GtmExportSchema } from "./schemas/export";
 import { TagSchema } from "./schemas/tag";
 import { TriggerSchema } from "./schemas/trigger";
 import { VariableSchema } from "./schemas/variable";
-import type { GtmExport, Tag, Trigger, Variable, Folder, BuiltInVariable, Zone, Client, Transformation } from "./schemas/index";
+import type { GtmExport, Tag, Trigger, Variable, Folder, BuiltInVariable, Zone, Client, Transformation, CustomTemplate } from "./schemas/index";
 import { nextId } from "./utils/entity";
 
 /**
@@ -85,6 +85,11 @@ export class ContainerStore {
     return this.data.containerVersion.container.transformation ?? [];
   }
 
+  /** Get custom templates */
+  get customTemplates(): CustomTemplate[] {
+    return this.data.containerVersion.container.customTemplate ?? [];
+  }
+
   /** Get container metadata */
   get containerInfo() {
     const cv = this.data.containerVersion;
@@ -111,6 +116,7 @@ export class ContainerStore {
       zones: this.zones.length,
       clients: this.clients.length,
       transformations: this.transformations.length,
+      customTemplates: this.customTemplates.length,
     };
   }
 

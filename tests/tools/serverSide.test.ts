@@ -68,4 +68,21 @@ describe("Server-side GTM tools", () => {
       await expect(tool.handler({ transformation_id: "999" })).rejects.toThrow("Transformation not found");
     });
   });
+
+  describe("gtm_list_custom_templates", () => {
+    it("should return custom templates (empty for web container)", async () => {
+      const result = await tools.find((t) => t.name === "gtm_list_custom_templates")!.handler({});
+      const text = JSON.parse(result.content[0].text);
+      expect(text).toHaveProperty("custom_templates");
+      expect(text).toHaveProperty("total_count");
+      expect(Array.isArray(text.custom_templates)).toBe(true);
+    });
+  });
+
+  describe("gtm_get_custom_template", () => {
+    it("should throw when template not found", async () => {
+      const tool = tools.find((t) => t.name === "gtm_get_custom_template")!;
+      await expect(tool.handler({ template_id: "999" })).rejects.toThrow("Custom template not found");
+    });
+  });
 });

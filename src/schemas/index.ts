@@ -25,3 +25,6 @@ export type { GtmExport, ContainerVersion } from "./export";
 
 export { ZoneSchema, ClientSchema, TransformationSchema } from "./serverSide";
 export type { Zone, Client, Transformation } from "./serverSide";
+
+export { CustomTemplateSchema } from "./customTemplate";
+export type { CustomTemplate } from "./customTemplate";

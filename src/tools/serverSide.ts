@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ContainerStore } from "../store";
 
-/** Server-side GTM tools (zones, clients, transformations) */
+/** Server-side GTM tools (zones, clients, transformations, custom templates) */
 export function registerServerSideTools(store: ContainerStore) {
   return [
     {
@@ -115,6 +115,44 @@ export function registerServerSideTools(store: ContainerStore) {
         }
         return {
           content: [{ type: "text" as const, text: JSON.stringify(transformation, null, 2) }],
+        };
+      },
+    },
+    {
+      name: "gtm_list_custom_templates",
+      description: "List all custom templates in the container. Requires a loaded container.",
+      parameters: z.object({}),
+      handler: async () => {
+        const templates = store.customTemplates.map((t) => ({
+          template_id: t.templateId,
+          name: t.name,
+          type: t.type,
+          notes: t.notes ?? null,
+        }));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ custom_templates: templates, total_count: templates.length }, null, 2) }],
+        };
+      },
+    },
+    {
+      name: "gtm_get_custom_template",
+      description: "Get custom template details by template_id or name. Requires a loaded container.",
+      parameters: z.object({
+        template_id: z.string().optional().describe("Template ID to look up"),
+        name: z.string().optional().describe("Template name to look up (alternative to template_id)"),
+      }),
+      handler: async ({ template_id, name }: { template_id?: string; name?: string }) => {
+        let template;
+        if (template_id) {
+          template = store.customTemplates.find((t) => t.templateId === template_id);
+        } else if (name) {
+          template = store.customTemplates.find((t) => t.name === name);
+        }
+        if (!template) {
+          throw new Error(`Custom template not found. Provided: template_id=${template_id ?? "none"}, name=${name ?? "none"}`);
+        }
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(template, null, 2) }],
         };
       },
     },
