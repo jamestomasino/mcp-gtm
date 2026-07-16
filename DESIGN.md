@@ -456,33 +456,106 @@ LLM → gtm_diff_containers(file_a="staging.json", file_b="prod.json")
 
 ## 8. Implementation Plan
 
-### Phase 1: Foundation
-- [ ] Scaffold TypeScript project with MCP SDK
-- [ ] Adapt stape-io Zod schemas for export JSON wrapper
-- [ ] Build container store (load, in-memory state)
-- [ ] Build read-only tools (load, list tags/triggers/variables, get entity)
-- [ ] Add test fixtures and unit tests
+### Phase 1: Foundation ✅ COMPLETE
+- [x] Scaffold TypeScript project with MCP SDK
+- [x] Adapt stape-io Zod schemas for export JSON wrapper
+- [x] Build container store (load, in-memory state)
+- [x] Build read-only tools (load, list tags/triggers/variables, get entity)
+- [x] Add test fixtures and unit tests
 
-### Phase 2: Write Operations
-- [ ] Tag CRUD tools with validation
-- [ ] Trigger CRUD tools with validation
-- [ ] Variable CRUD tools with validation
-- [ ] Export tool (write state to JSON file)
-- [ ] Round-trip tests (load → modify → export → reload)
+### Phase 2: Write Operations ✅ COMPLETE
+- [x] Tag CRUD tools with validation
+- [x] Trigger CRUD tools with validation
+- [x] Variable CRUD tools with validation
+- [x] Folder CRUD tools (create, delete, move_tag_to_folder)
+- [x] Export tool (write state to JSON file)
+- [x] Round-trip tests (load → modify → export → reload)
 
-### Phase 3: Analysis & Polish
-- [ ] Analysis tools (dependencies, unused entities, orphaned triggers)
-- [ ] Container diff tool
-- [ ] Full validation tool
-- [ ] Documentation and README
+### Phase 3: Analysis & Polish ⚠️ MOSTLY COMPLETE
+- [x] Analysis tools (dependencies, unused entities, orphaned triggers)
+- [x] Container diff tool
+- [x] Full validation tool
+- [x] Documentation and README
+- [x] MCP Resources (4: container_state, tags, triggers, variables)
+- [x] MCP Prompts (4: inspect, audit, debug, compare)
+- [ ] Per-tool unit tests (`tests/tools/` is empty)
+- [ ] MCP protocol integration tests
 - [ ] Publish to npm
 
-### Phase 4: Advanced
+### Phase 4: Advanced 🔲 NOT STARTED
 - [ ] Server-side GTM entities (zones, clients, transformations)
-- [ ] Folder management (create, move entities)
+- [ ] Folder management improvements (move triggers/variables to folders)
 - [ ] Custom template support
 - [ ] MCP resources for container state snapshots
 - [ ] MCP prompts for common workflows
+- [ ] Read-only mode config flag
+
+---
+
+## Status Update (2026-07-16)
+
+### Build Health
+- **Tests**: 34 / 34 passing (2 test files: `store.test.ts`, `roundtrip.test.ts`)
+- **Build**: `dist/` compiled and up-to-date
+- **Git**: Clean, on `main`, single commit
+
+### Implementation Status
+
+#### Phase 1: Foundation — ✅ COMPLETE
+- [x] Scaffold TypeScript project with MCP SDK
+- [x] Zod schemas (export, tag, trigger, variable, folder, container, parameter, condition)
+- [x] ContainerStore (load, in-memory state, CRUD, export, validate)
+- [x] Read-only tools (load, list tags/triggers/variables, get entity)
+- [x] Test fixtures (`simple.json`, `complex.json`) and unit tests
+
+#### Phase 2: Write Operations — ✅ COMPLETE
+- [x] Tag CRUD tools with validation (list, get, create, update, delete, find_by_type)
+- [x] Trigger CRUD tools with validation (list, get, create, update, delete)
+- [x] Variable CRUD tools with validation (list, get, create, update, delete, list_builtin)
+- [x] Folder tools (list, get, create, delete, move_tag_to_folder)
+- [x] Export tool (write state to JSON file)
+- [x] Round-trip tests (load → modify → export → reload)
+
+#### Phase 3: Analysis & Polish — ⚠️ MOSTLY COMPLETE
+- [x] Analysis tools (dependencies, unused entities, orphaned triggers, validate)
+- [x] Container diff tool
+- [x] Full validation tool
+- [x] MCP Resources (4: container_state, container_tags, container_triggers, container_variables)
+- [x] MCP Prompts (4: inspect_container, audit_container, debug_tag, compare_containers)
+- [x] Auto-load from `GTM_CONTAINER_FILE` env var
+- [x] README.md with full documentation
+- [ ] Per-tool unit tests (`tests/tools/` directory is empty)
+- [ ] MCP protocol integration tests
+- [ ] Publish to npm
+
+#### Phase 4: Advanced — 🔲 NOT STARTED
+- [ ] Server-side GTM entities (zones, clients, transformations)
+- [ ] Folder management improvements (move triggers/variables to folders)
+- [ ] Custom template support
+- [ ] Read-only mode config flag
+
+### Tool Inventory (31 tools, 4 resources, 4 prompts)
+
+All 31 tools from the design spec are implemented and registered in `src/index.ts`. The tool groups are:
+
+| Group | File | Tools |
+|-------|------|-------|
+| Container | `tools/container.ts` | load_container, get_container_info, get_container_state |
+| Tags | `tools/tags.ts` | list_tags, get_tag, create_tag, update_tag, delete_tag, find_tags_by_type |
+| Triggers | `tools/triggers.ts` | list_triggers, get_trigger, create_trigger, update_trigger, delete_trigger |
+| Variables | `tools/variables.ts` | list_variables, get_variable, create_variable, update_variable, delete_variable, list_builtin_variables |
+| Folders | `tools/folders.ts` | list_folders, get_folder, create_folder, delete_folder, move_tag_to_folder |
+| Analysis | `tools/analysis.ts` | get_tag_dependencies, find_unused_entities, find_orphaned_triggers, validate_container |
+| Export | `tools/export.ts` | export_container, diff_containers |
+
+### Where We Left Off
+
+The crash occurred after Phase 2 was complete and Phase 3 analysis tools were implemented. The next items to tackle are:
+
+1. **Add per-tool tests** — `tests/tools/` directory exists but is empty. Each tool group needs its own test file verifying correct responses and error handling.
+2. **Add MCP integration tests** — Full protocol round-trip tests using the MCP SDK test harness.
+3. **Publish to npm** — Finalize `package.json` and publish.
+4. **Phase 4 features** — Server-side GTM entities, custom templates, read-only mode.
 
 ---
 
