@@ -1,6 +1,6 @@
 # mcp-gtm
 
-[![CI](https://github.com/1jehuang/mcp-gtm/actions/workflows/ci.yml/badge.svg)](https://github.com/1jehuang/mcp-gtm/actions/workflows/ci.yml)
+[![CI](https://github.com/jamestomasino/mcp-gtm/actions/workflows/ci.yml/badge.svg)](https://github.com/jamestomasino/mcp-gtm/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![npm version](https://img.shields.io/npm/v/mcp-gtm.svg)](https://www.npmjs.com/package/mcp-gtm)
 
