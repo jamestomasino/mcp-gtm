@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Tag } from "../schemas/tag";
 import type { ContainerStore } from "../store";
 import { resolveFolderName, resolveTriggerNames } from "../utils/entity";
 import { getTagTypeName } from "../utils/typeCodes";
@@ -145,18 +146,16 @@ export function registerTagTools(store: ContainerStore) {
         tag_id: string;
         [key: string]: unknown;
       }) => {
-        const tag = store.updateTag(tag_id, {
-          ...(updates.name !== undefined && { name: updates.name as string }),
-          ...(updates.folder_id !== undefined && {
-            parentFolderId: updates.folder_id as string
-          }),
-          ...(updates.notes !== undefined && {
-            notes: updates.notes as string
-          }),
-          ...(updates.enabled !== undefined && {
-            enabled: updates.enabled as boolean
-          })
-        } as any);
+        const updatesObj: Record<string, string | boolean> = {};
+        if (updates.name !== undefined)
+          updatesObj.name = updates.name as string;
+        if (updates.folder_id !== undefined)
+          updatesObj.parentFolderId = updates.folder_id as string;
+        if (updates.notes !== undefined)
+          updatesObj.notes = updates.notes as string;
+        if (updates.enabled !== undefined)
+          updatesObj.enabled = updates.enabled as boolean;
+        const tag = store.updateTag(tag_id, updatesObj as Partial<Tag>);
         return {
           content: [
             {

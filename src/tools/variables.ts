@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Variable } from "../schemas/variable";
 import type { ContainerStore } from "../store";
 import { getVariableTypeName } from "../utils/typeCodes";
 
@@ -151,15 +152,18 @@ export function registerVariableTools(store: ContainerStore) {
         variable_id: string;
         [key: string]: unknown;
       }) => {
-        const variable = store.updateVariable(variable_id, {
-          ...(updates.name !== undefined && { name: updates.name as string }),
-          ...(updates.notes !== undefined && {
-            notes: updates.notes as string
-          }),
-          ...(updates.parameters !== undefined && {
-            parameter: updates.parameters as any
-          })
-        } as any);
+        const updatesObj: Record<string, string | unknown[]> = {};
+        if (updates.name !== undefined)
+          updatesObj.name = updates.name as string;
+        if (updates.notes !== undefined)
+          updatesObj.notes = updates.notes as string;
+        if (updates.parameters !== undefined && updates.parameters !== null) {
+          updatesObj.parameter = updates.parameters as unknown[];
+        }
+        const variable = store.updateVariable(
+          variable_id,
+          updatesObj as Partial<Variable>
+        );
         return {
           content: [
             {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Trigger } from "../schemas/trigger";
 import type { ContainerStore } from "../store";
 import { resolveFolderName } from "../utils/entity";
 import { getTriggerTypeName } from "../utils/typeCodes";
@@ -140,13 +141,17 @@ export function registerTriggerTools(store: ContainerStore) {
         trigger_id: string;
         [key: string]: unknown;
       }) => {
-        const trigger = store.updateTrigger(trigger_id, {
-          ...(updates.name !== undefined && { name: updates.name as string }),
-          ...(updates.folder_id !== undefined && {
-            parentFolderId: updates.folder_id as string
-          }),
-          ...(updates.notes !== undefined && { notes: updates.notes as string })
-        } as any);
+        const updatesObj: Record<string, string> = {};
+        if (updates.name !== undefined)
+          updatesObj.name = updates.name as string;
+        if (updates.folder_id !== undefined)
+          updatesObj.parentFolderId = updates.folder_id as string;
+        if (updates.notes !== undefined)
+          updatesObj.notes = updates.notes as string;
+        const trigger = store.updateTrigger(
+          trigger_id,
+          updatesObj as Partial<Trigger>
+        );
         return {
           content: [
             {

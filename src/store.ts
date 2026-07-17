@@ -70,9 +70,10 @@ export class ContainerStore {
       ["customTemplate", "customTemplate"]
     ];
     if (cv && container) {
+      const mutableContainer = container as Record<string, unknown>;
       for (const [srcKey, dstKey] of entityMap) {
         if (cv[srcKey] && !(dstKey in container)) {
-          (container as any)[dstKey] = cv[srcKey];
+          mutableContainer[dstKey] = cv[srcKey];
         }
       }
     }
@@ -94,8 +95,10 @@ export class ContainerStore {
 
   /** Get the full export data (throws if not loaded) */
   get data(): GtmExport {
-    this.assertLoaded();
-    return this._data!;
+    if (!this._data) {
+      throw new Error("No container loaded. Call gtm_load_container first.");
+    }
+    return this._data;
   }
 
   /** Get tags */
@@ -495,12 +498,6 @@ export class ContainerStore {
     return true;
   }
 
-  private assertLoaded(): void {
-    if (!this._data) {
-      throw new Error("No container loaded. Call gtm_load_container first.");
-    }
-  }
-
   /** Snapshot current state for undo */
   private snapshot(): void {
     if (!this._data) return;
@@ -514,17 +511,21 @@ export class ContainerStore {
 
   /** Undo the last mutation */
   undo(): boolean {
-    if (this._undoStack.length === 0) return false;
-    this._redoStack.push(JSON.parse(JSON.stringify(this._data!)));
-    this._data = this._undoStack.pop()!;
+    if (this._undoStack.length === 0 || !this._data) return false;
+    this._redoStack.push(JSON.parse(JSON.stringify(this._data)));
+    const prev = this._undoStack.pop();
+    if (!prev) return false;
+    this._data = prev;
     return true;
   }
 
   /** Redo the last undone mutation */
   redo(): boolean {
-    if (this._redoStack.length === 0) return false;
-    this._undoStack.push(JSON.parse(JSON.stringify(this._data!)));
-    this._data = this._redoStack.pop()!;
+    if (this._redoStack.length === 0 || !this._data) return false;
+    this._undoStack.push(JSON.parse(JSON.stringify(this._data)));
+    const next = this._redoStack.pop();
+    if (!next) return false;
+    this._data = next;
     return true;
   }
 }
