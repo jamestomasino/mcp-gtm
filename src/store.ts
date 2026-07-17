@@ -29,6 +29,30 @@ export class ContainerStore {
     const raw = readFileSync(filePath, "utf-8");
     const parsed = JSON.parse(raw);
 
+    // Normalize workspace exports: entities may sit at containerVersion level
+    // instead of inside containerVersion.container
+    const cv = parsed.containerVersion;
+    const container = cv?.container;
+    const entityMap: Array<[string, string]> = [
+      ["tag", "tag"],
+      ["trigger", "trigger"],
+      ["userDefinedVariable", "userDefinedVariable"],
+      ["variable", "userDefinedVariable"], // workspace exports use "variable"
+      ["folder", "folder"],
+      ["builtInVariable", "builtInVariable"],
+      ["zone", "zone"],
+      ["client", "client"],
+      ["transformation", "transformation"],
+      ["customTemplate", "customTemplate"],
+    ];
+    if (cv && container) {
+      for (const [srcKey, dstKey] of entityMap) {
+        if (cv[srcKey] && !(dstKey in container)) {
+          (container as any)[dstKey] = cv[srcKey];
+        }
+      }
+    }
+
     const result = GtmExportSchema.safeParse(parsed);
     if (!result.success) {
       const errors = result.error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ");

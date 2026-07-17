@@ -12,7 +12,7 @@ import { CustomTemplateSchema } from "./customTemplate";
 export const ContainerSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
-  usageContext: z.array(z.number()).optional(), // 1 = web, 2 = server, 3 = android, 4 = ios
+  usageContext: z.array(z.union([z.number(), z.string()])).optional(), // 1 = web, 2 = server, 3 = android, 4 = ios; also "WEB", "SERVER", etc.
   defaultTimezone: z.string().optional(),
   note: z.string().optional(),
   noteColor: z.string().optional(),

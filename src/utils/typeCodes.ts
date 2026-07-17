@@ -66,6 +66,6 @@ export const USAGE_CONTEXT_NAMES: Record<number, string> = {
   4: "iOS",
 };
 
-export function getUsageContextNames(contexts: number[]): string[] {
-  return contexts.map((c) => USAGE_CONTEXT_NAMES[c] ?? String(c));
+export function getUsageContextNames(contexts: (number | string)[]): string[] {
+  return contexts.map((c) => (typeof c === "number" ? (USAGE_CONTEXT_NAMES[c] ?? String(c)) : String(c)));
 }
