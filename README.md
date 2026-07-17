@@ -1,5 +1,9 @@
 # mcp-gtm
 
+[![CI](https://github.com/1jehuang/mcp-gtm/actions/workflows/ci.yml/badge.svg)](https://github.com/1jehuang/mcp-gtm/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm version](https://img.shields.io/npm/v/mcp-gtm.svg)](https://www.npmjs.com/package/mcp-gtm)
+
 An MCP (Model Context Protocol) server that lets LLMs interact with Google Tag Manager through **exported JSON container files**. Zero auth setup, fully offline.
 
 ## Quick Start
@@ -25,7 +29,7 @@ Or configure in your MCP client:
 }
 ```
 
-## Tools (44 total)
+## Tools (47 total)
 
 ### Container
 | Tool | Description |
@@ -107,6 +111,17 @@ Or configure in your MCP client:
 | `gtm_export_container` | Export container state to JSON |
 | `gtm_diff_containers` | Compare two container files |
 
+### Search
+| Tool | Description |
+|------|-------------|
+| `gtm_search` | Full-text search across entity names and notes |
+
+### Undo/Redo
+| Tool | Description |
+|------|-------------|
+| `gtm_undo` | Undo the last mutation |
+| `gtm_redo` | Redo the last undone mutation |
+
 ## Resources (4 total)
 
 Read-only MCP resources for container state snapshots:
@@ -118,7 +133,7 @@ Read-only MCP resources for container state snapshots:
 | `container_triggers` | `gtm://container/triggers` | Full trigger listing |
 | `container_variables` | `gtm://container/variables` | Full variable listing |
 
-## Prompts (4 total)
+## Prompts (5 total)
 
 Pre-built prompt templates for common workflows:
 
@@ -150,6 +165,8 @@ Pre-built prompt templates for common workflows:
 npm test        # Run tests
 npm run dev     # Run server
 npm run build   # TypeScript check
+npm run lint    # Biome lint
+npm run format  # Biome format
 ```
 
 ## License

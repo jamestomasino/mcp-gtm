@@ -13,7 +13,7 @@ export const TAG_TYPE_NAMES: Record<string, string> = {
   dbm: "DoubleClick Studio",
   adm: "Ad Manager",
   dfa: "DoubleClick for Publishers",
-  rem: "Remarketing",
+  rem: "Remarketing"
 };
 
 export const TRIGGER_TYPE_NAMES: Record<string, string> = {
@@ -27,7 +27,7 @@ export const TRIGGER_TYPE_NAMES: Record<string, string> = {
   domReady: "DOM Ready",
   error: "Error",
   video: "YouTube Video",
-  impression: "Impression",
+  impression: "Impression"
 };
 
 export const VARIABLE_TYPE_NAMES: Record<string, string> = {
@@ -40,7 +40,7 @@ export const VARIABLE_TYPE_NAMES: Record<string, string> = {
   k: "Cookie",
   d: "DOM Element",
   gas: "GA Settings",
-  mm: "Monarch",
+  mm: "Monarch"
 };
 
 /** Get human-readable name for a tag type */
@@ -63,9 +63,11 @@ export const USAGE_CONTEXT_NAMES: Record<number, string> = {
   1: "Web",
   2: "Server-Side",
   3: "Android",
-  4: "iOS",
+  4: "iOS"
 };
 
 export function getUsageContextNames(contexts: (number | string)[]): string[] {
-  return contexts.map((c) => (typeof c === "number" ? (USAGE_CONTEXT_NAMES[c] ?? String(c)) : String(c)));
+  return contexts.map((c) =>
+    typeof c === "number" ? (USAGE_CONTEXT_NAMES[c] ?? String(c)) : String(c)
+  );
 }

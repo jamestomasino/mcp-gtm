@@ -4,26 +4,35 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio";
 import { z } from "zod";
 import { ContainerStore } from "./store";
+import { registerAnalysisTools } from "./tools/analysis";
 import { registerContainerTools } from "./tools/container";
+import { registerExportTools } from "./tools/export";
+import { registerFolderTools } from "./tools/folders";
+import { registerLifecycleTools } from "./tools/lifecycle";
+import { registerSearchTools } from "./tools/search";
+import { registerServerSideTools } from "./tools/serverSide";
 import { registerTagTools } from "./tools/tags";
 import { registerTriggerTools } from "./tools/triggers";
+import { registerUndoTools } from "./tools/undo";
 import { registerVariableTools } from "./tools/variables";
-import { registerFolderTools } from "./tools/folders";
-import { registerAnalysisTools } from "./tools/analysis";
-import { registerExportTools } from "./tools/export";
-import { registerServerSideTools } from "./tools/serverSide";
-import { registerLifecycleTools } from "./tools/lifecycle";
+import { formatError } from "./utils/errors";
 
 const store = new ContainerStore();
 
 const server = new McpServer({
   name: "mcp-gtm",
-  version: "0.1.0",
+  version: "0.1.0"
 });
 
 // Read-only mode: skip write tools when GTM_READ_ONLY is set
 const readOnly = process.env.GTM_READ_ONLY !== undefined;
-const writeToolPrefixes = ["gtm_create_", "gtm_update_", "gtm_delete_", "gtm_move_", "gtm_export_"];
+const writeToolPrefixes = [
+  "gtm_create_",
+  "gtm_update_",
+  "gtm_delete_",
+  "gtm_move_",
+  "gtm_export_"
+];
 
 function isWriteTool(name: string): boolean {
   return writeToolPrefixes.some((prefix) => name.startsWith(prefix));
@@ -40,9 +49,13 @@ const allTools = [
   ...registerExportTools(store),
   ...registerServerSideTools(store),
   ...registerLifecycleTools(store),
+  ...registerSearchTools(store),
+  ...registerUndoTools(store)
 ];
 
-const toolsToRegister = readOnly ? allTools.filter((t) => !isWriteTool(t.name)) : allTools;
+const toolsToRegister = readOnly
+  ? allTools.filter((t) => !isWriteTool(t.name))
+  : allTools;
 
 // Register each tool with the MCP server
 for (const tool of toolsToRegister) {
@@ -54,97 +67,117 @@ for (const tool of toolsToRegister) {
       try {
         return await tool.handler(params as never);
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text" as const, text: `Error: ${message}` }],
-          isError: true,
-        };
+        return formatError(error);
       }
     }
   );
 }
 
 // MCP Resources: container state snapshots
-server.resource(
-  "container_state",
-  "gtm://container/state",
-  async () => {
-    if (!store.isLoaded) {
-      return {
-        contents: [{ uri: "gtm://container/state", mimeType: "text/plain", text: "No container loaded. Use gtm_load_container first." }],
-      };
-    }
+server.resource("container_state", "gtm://container/state", async () => {
+  if (!store.isLoaded) {
     return {
-      contents: [{
+      contents: [
+        {
+          uri: "gtm://container/state",
+          mimeType: "text/plain",
+          text: "No container loaded. Use gtm_load_container first."
+        }
+      ]
+    };
+  }
+  return {
+    contents: [
+      {
         uri: "gtm://container/state",
         mimeType: "application/json",
-        text: JSON.stringify({
-          loaded: true,
-          source_path: store.sourcePath,
-          container: store.containerInfo,
-          counts: store.state,
-        }, null, 2),
-      }],
+        text: JSON.stringify(
+          {
+            loaded: true,
+            source_path: store.sourcePath,
+            container: store.containerInfo,
+            counts: store.state
+          },
+          null,
+          2
+        )
+      }
+    ]
+  };
+});
+
+server.resource("container_tags", "gtm://container/tags", async () => {
+  if (!store.isLoaded) {
+    return {
+      contents: [
+        {
+          uri: "gtm://container/tags",
+          mimeType: "text/plain",
+          text: "No container loaded."
+        }
+      ]
     };
   }
-);
-
-server.resource(
-  "container_tags",
-  "gtm://container/tags",
-  async () => {
-    if (!store.isLoaded) {
-      return {
-        contents: [{ uri: "gtm://container/tags", mimeType: "text/plain", text: "No container loaded." }],
-      };
-    }
-    return {
-      contents: [{
+  return {
+    contents: [
+      {
         uri: "gtm://container/tags",
         mimeType: "application/json",
-        text: JSON.stringify({
-          tags: store.tags.map((t) => ({
-            tag_id: t.tagId,
-            name: t.name,
-            type: t.type,
-            enabled: t.enabled ?? true,
-            firing_trigger_ids: t.firingTriggerId ?? [],
-            blocking_trigger_ids: t.blockingTriggerId ?? [],
-            folder_id: t.parentFolderId ?? null,
-          })),
-          total_count: store.tags.length,
-        }, null, 2),
-      }],
+        text: JSON.stringify(
+          {
+            tags: store.tags.map((t) => ({
+              tag_id: t.tagId,
+              name: t.name,
+              type: t.type,
+              enabled: t.enabled ?? true,
+              firing_trigger_ids: t.firingTriggerId ?? [],
+              blocking_trigger_ids: t.blockingTriggerId ?? [],
+              folder_id: t.parentFolderId ?? null
+            })),
+            total_count: store.tags.length
+          },
+          null,
+          2
+        )
+      }
+    ]
+  };
+});
+
+server.resource("container_triggers", "gtm://container/triggers", async () => {
+  if (!store.isLoaded) {
+    return {
+      contents: [
+        {
+          uri: "gtm://container/triggers",
+          mimeType: "text/plain",
+          text: "No container loaded."
+        }
+      ]
     };
   }
-);
-
-server.resource(
-  "container_triggers",
-  "gtm://container/triggers",
-  async () => {
-    if (!store.isLoaded) {
-      return {
-        contents: [{ uri: "gtm://container/triggers", mimeType: "text/plain", text: "No container loaded." }],
-      };
-    }
-    return {
-      contents: [{
+  return {
+    contents: [
+      {
         uri: "gtm://container/triggers",
         mimeType: "application/json",
-        text: JSON.stringify({
-          triggers: store.triggers.map((t) => ({
-            trigger_id: t.triggerId,
-            name: t.name,
-            type: t.type,
-            folder_id: t.parentFolderId ?? null,
-          })),
-          total_count: store.triggers.length,
-        }, null, 2),
-      }],
-    };
-  }
-);
+        text: JSON.stringify(
+          {
+            triggers: store.triggers.map((t) => ({
+              trigger_id: t.triggerId,
+              name: t.name,
+              type: t.type,
+              folder_id: t.parentFolderId ?? null
+            })),
+            total_count: store.triggers.length
+          },
+          null,
+          2
+        )
+      }
+    ]
+  };
+});
 
 server.resource(
   "container_variables",
@@ -152,22 +185,34 @@ server.resource(
   async () => {
     if (!store.isLoaded) {
       return {
-        contents: [{ uri: "gtm://container/variables", mimeType: "text/plain", text: "No container loaded." }],
+        contents: [
+          {
+            uri: "gtm://container/variables",
+            mimeType: "text/plain",
+            text: "No container loaded."
+          }
+        ]
       };
     }
     return {
-      contents: [{
-        uri: "gtm://container/variables",
-        mimeType: "application/json",
-        text: JSON.stringify({
-          variables: store.variables.map((v) => ({
-            variable_id: v.variableId,
-            name: v.name,
-            type: v.type,
-          })),
-          total_count: store.variables.length,
-        }, null, 2),
-      }],
+      contents: [
+        {
+          uri: "gtm://container/variables",
+          mimeType: "application/json",
+          text: JSON.stringify(
+            {
+              variables: store.variables.map((v) => ({
+                variable_id: v.variableId,
+                name: v.name,
+                type: v.type
+              })),
+              total_count: store.variables.length
+            },
+            null,
+            2
+          )
+        }
+      ]
     };
   }
 );
@@ -179,13 +224,15 @@ server.prompt(
   {},
   async () => {
     return {
-      messages: [{
-        role: "user",
-        content: {
-          type: "text",
-          text: "Please inspect the GTM container. List all tags, triggers, and variables. Resolve trigger IDs to trigger names and folder IDs to folder names where possible. Summarize the findings.",
-        },
-      }],
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: "Please inspect the GTM container. List all tags, triggers, and variables. Resolve trigger IDs to trigger names and folder IDs to folder names where possible. Summarize the findings."
+          }
+        }
+      ]
     };
   }
 );
@@ -196,13 +243,15 @@ server.prompt(
   {},
   async () => {
     return {
-      messages: [{
-        role: "user",
-        content: {
-          type: "text",
-          text: "Please audit the GTM container. Find all disabled tags, orphaned triggers (not fired by any tag), and unused entities. Present cleanup recommendations.",
-        },
-      }],
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: "Please audit the GTM container. Find all disabled tags, orphaned triggers (not fired by any tag), and unused entities. Present cleanup recommendations."
+          }
+        }
+      ]
     };
   }
 );
@@ -211,17 +260,19 @@ server.prompt(
   "debug_tag",
   "Debug why a specific tag might not be firing",
   {
-    tag_identifier: z.string().describe("Tag ID or name to debug"),
+    tag_identifier: z.string().describe("Tag ID or name to debug")
   },
   async ({ tag_identifier }) => {
     return {
-      messages: [{
-        role: "user",
-        content: {
-          type: "text",
-          text: `Debug why the tag "${tag_identifier}" might not be firing. Check its trigger configuration, filter conditions, blocking triggers, and dependencies. Identify any misconfigurations.`,
-        },
-      }],
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `Debug why the tag "${tag_identifier}" might not be firing. Check its trigger configuration, filter conditions, blocking triggers, and dependencies. Identify any misconfigurations.`
+          }
+        }
+      ]
     };
   }
 );
@@ -231,17 +282,19 @@ server.prompt(
   "Compare two GTM container files and report differences",
   {
     file_a: z.string().describe("Path to the first container JSON file"),
-    file_b: z.string().describe("Path to the second container JSON file"),
+    file_b: z.string().describe("Path to the second container JSON file")
   },
   async ({ file_a, file_b }) => {
     return {
-      messages: [{
-        role: "user",
-        content: {
-          type: "text",
-          text: `Compare these two GTM container files: ${file_a} vs ${file_b}. Report what tags, triggers, and variables were added, removed, or modified. Summarize the differences.`,
-        },
-      }],
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `Compare these two GTM container files: ${file_a} vs ${file_b}. Report what tags, triggers, and variables were added, removed, or modified. Summarize the differences.`
+          }
+        }
+      ]
     };
   }
 );
@@ -252,13 +305,15 @@ server.prompt(
   {},
   async () => {
     return {
-      messages: [{
-        role: "user",
-        content: {
-          type: "text",
-          text: "Please audit the GTM container for consent mode compliance. Analyze the tag firing order, check consent management setup (consent tags, variables, blocking triggers), identify unprotected data collection tags, and report any timing or lifecycle issues. Provide specific recommendations for fixing any problems found.",
-        },
-      }],
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: "Please audit the GTM container for consent mode compliance. Analyze the tag firing order, check consent management setup (consent tags, variables, blocking triggers), identify unprotected data collection tags, and report any timing or lifecycle issues. Provide specific recommendations for fixing any problems found."
+          }
+        }
+      ]
     };
   }
 );
@@ -270,7 +325,9 @@ if (envContainerFile) {
     store.load(envContainerFile);
     console.error(`Auto-loaded container from ${envContainerFile}`);
   } catch (error) {
-    console.error(`Failed to auto-load container from ${envContainerFile}: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `Failed to auto-load container from ${envContainerFile}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 

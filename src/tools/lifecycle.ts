@@ -1,7 +1,7 @@
 import { z } from "zod";
-import type { ContainerStore } from "../store";
 import type { Tag, Trigger, Variable } from "../schemas/index";
-import { resolveTriggerName, resolveFolderName } from "../utils/entity";
+import type { ContainerStore } from "../store";
+import { resolveTriggerName } from "../utils/entity";
 import { getTagTypeName } from "../utils/typeCodes";
 
 // ---------------------------------------------------------------------------
@@ -22,18 +22,34 @@ import { getTagTypeName } from "../utils/typeCodes";
  */
 const FIRING_ORDER_GROUP_PRIORITY: Record<string, number> = {
   // Google tags fire first
-  gaawe: 1, googtag: 1, ua: 1, awct: 1, gf: 1, dbm: 1, adm: 1, dfa: 1, rem: 1,
+  gaawe: 1,
+  googtag: 1,
+  ua: 1,
+  awct: 1,
+  gf: 1,
+  dbm: 1,
+  adm: 1,
+  dfa: 1,
+  rem: 1,
   // Custom HTML fires second
   html: 2,
   // Custom Image fires third
   img: 3,
   // Custom templates fire last
-  cvt_: 4,
+  cvt_: 4
 };
 
 function getFiringGroup(tag: Tag): { group: string; priority: number } {
-  const priority = FIRING_ORDER_GROUP_PRIORITY[tag.type] ?? FIRING_ORDER_GROUP_PRIORITY["cvt_"];
-  const group = priority === 1 ? "google" : priority === 2 ? "custom_html" : priority === 3 ? "custom_image" : "custom_template";
+  const priority =
+    FIRING_ORDER_GROUP_PRIORITY[tag.type] ?? FIRING_ORDER_GROUP_PRIORITY.cvt_;
+  const group =
+    priority === 1
+      ? "google"
+      : priority === 2
+        ? "custom_html"
+        : priority === 3
+          ? "custom_image"
+          : "custom_template";
   return { group, priority };
 }
 
@@ -56,11 +72,24 @@ function getFiringGroup(tag: Tag): { group: string; priority: number } {
  * 4. Look for consent initialization patterns (timer triggers, custom events for consent)
  */
 const CONSENT_KEYWORDS = [
-  "consent", "gdpr", "ccpa", "cmp", "consent_mode", "consentmode",
-  "ad_storage", "analytics_storage", "functionality_storage",
-  "personalization_storage", "security_storage",
-  "grant", "deny", "default_consent", "update_consent",
-  "google.consent", "consent.status", "data_layer_version",
+  "consent",
+  "gdpr",
+  "ccpa",
+  "cmp",
+  "consent_mode",
+  "consentmode",
+  "ad_storage",
+  "analytics_storage",
+  "functionality_storage",
+  "personalization_storage",
+  "security_storage",
+  "grant",
+  "deny",
+  "default_consent",
+  "update_consent",
+  "google.consent",
+  "consent.status",
+  "data_layer_version"
 ];
 
 /** Check if a string contains consent-related keywords (case-insensitive) */
@@ -86,7 +115,10 @@ function hasConsentReferences(params: unknown[]): boolean {
  * Heuristic: trigger name or filter references consent variables,
  * or trigger is used as a blocking trigger on data-collection tags.
  */
-function isLikelyConsentBlockingTrigger(trigger: Trigger, store: ContainerStore): boolean {
+function isLikelyConsentBlockingTrigger(
+  trigger: Trigger,
+  store: ContainerStore
+): boolean {
   // Check trigger name for consent keywords
   if (containsConsentKeyword(trigger.name)) return true;
 
@@ -102,8 +134,10 @@ function isLikelyConsentBlockingTrigger(trigger: Trigger, store: ContainerStore)
   // Check if used as blocking trigger on data-collection tags
   const dataCollectionTypes = ["gaawe", "googtag", "awct", "ua", "html", "img"];
   for (const tag of store.tags) {
-    if (dataCollectionTypes.includes(tag.type) &&
-        (tag.blockingTriggerId ?? []).includes(trigger.triggerId)) {
+    if (
+      dataCollectionTypes.includes(tag.type) &&
+      (tag.blockingTriggerId ?? []).includes(trigger.triggerId)
+    ) {
       return true;
     }
   }
@@ -117,7 +151,8 @@ function isLikelyConsentBlockingTrigger(trigger: Trigger, store: ContainerStore)
  */
 function isConsentManagementTag(tag: Tag): boolean {
   if (containsConsentKeyword(tag.name)) return true;
-  if (Array.isArray(tag.parameter) && hasConsentReferences(tag.parameter)) return true;
+  if (Array.isArray(tag.parameter) && hasConsentReferences(tag.parameter))
+    return true;
   return false;
 }
 
@@ -126,7 +161,11 @@ function isConsentManagementTag(tag: Tag): boolean {
  */
 function isConsentVariable(variable: Variable): boolean {
   if (containsConsentKeyword(variable.name)) return true;
-  if (Array.isArray(variable.parameter) && hasConsentReferences(variable.parameter)) return true;
+  if (
+    Array.isArray(variable.parameter) &&
+    hasConsentReferences(variable.parameter)
+  )
+    return true;
   return false;
 }
 
@@ -134,7 +173,10 @@ function isConsentVariable(variable: Variable): boolean {
  * Extract sequencing dependencies from tag parameters.
  * Tags can specify "tagsToOverride" (fires after) via parameter key "tagsToOverride".
  */
-function getSequencingDependencies(tag: Tag): { firesAfter: string[]; firesBefore: string[] } {
+function getSequencingDependencies(tag: Tag): {
+  firesAfter: string[];
+  firesBefore: string[];
+} {
   const firesAfter: string[] = [];
   if (Array.isArray(tag.parameter)) {
     for (const param of tag.parameter) {
@@ -170,7 +212,6 @@ export interface LifecycleIssue {
 
 function analyzeTagFiringOrder(store: ContainerStore) {
   const tags = store.tags.filter((t) => t.enabled !== false);
-  const triggers = store.triggers;
 
   // Build inverse map: which tags fire before a given tag (via tagsToOverride)
   const firesBeforeMap = new Map<string, string[]>();
@@ -178,7 +219,7 @@ function analyzeTagFiringOrder(store: ContainerStore) {
     const deps = getSequencingDependencies(tag);
     for (const afterId of deps.firesAfter) {
       if (!firesBeforeMap.has(afterId)) firesBeforeMap.set(afterId, []);
-      firesBeforeMap.get(afterId)!.push(tag.tagId);
+      firesBeforeMap.get(afterId)?.push(tag.tagId);
     }
   }
 
@@ -186,7 +227,8 @@ function analyzeTagFiringOrder(store: ContainerStore) {
   const sorted = [...tags].sort((a, b) => {
     const aGroup = getFiringGroup(a);
     const bGroup = getFiringGroup(b);
-    if (aGroup.priority !== bGroup.priority) return aGroup.priority - bGroup.priority;
+    if (aGroup.priority !== bGroup.priority)
+      return aGroup.priority - bGroup.priority;
     return Number(a.tagId) - Number(b.tagId);
   });
 
@@ -201,13 +243,19 @@ function analyzeTagFiringOrder(store: ContainerStore) {
         const aGroup = getFiringGroup(tag);
         const bGroup = getFiringGroup(afterTag);
         // Natural order would put lower tagId first within same group
-        if (aGroup.priority === bGroup.priority && Number(tag.tagId) < Number(afterTag.tagId)) {
+        if (
+          aGroup.priority === bGroup.priority &&
+          Number(tag.tagId) < Number(afterTag.tagId)
+        ) {
           // This is fine — lower tagId fires first, and this tag fires after higher tagId
-        } else if (aGroup.priority <= bGroup.priority && Number(tag.tagId) > Number(afterTag.tagId)) {
+        } else if (
+          aGroup.priority <= bGroup.priority &&
+          Number(tag.tagId) > Number(afterTag.tagId)
+        ) {
           // Potential conflict: this tag naturally fires later but must wait for an earlier tag
           sequencingConflicts.push({
             tag: tag.name,
-            firesAfter: afterTag.name,
+            firesAfter: afterTag.name
           });
         }
       }
@@ -235,17 +283,23 @@ function analyzeTagFiringOrder(store: ContainerStore) {
           return t ? t.name : id;
         }),
         blocked_by_tag_ids: tag.blockingTagId ?? [],
-        blocked_by_trigger_ids: tag.blockingTriggerId ?? [],
+        blocked_by_trigger_ids: tag.blockingTriggerId ?? []
       };
     }),
     groups: {
       google: sorted.filter((t) => getFiringGroup(t).group === "google").length,
-      custom_html: sorted.filter((t) => getFiringGroup(t).group === "custom_html").length,
-      custom_image: sorted.filter((t) => getFiringGroup(t).group === "custom_image").length,
-      custom_template: sorted.filter((t) => getFiringGroup(t).group === "custom_template").length,
+      custom_html: sorted.filter(
+        (t) => getFiringGroup(t).group === "custom_html"
+      ).length,
+      custom_image: sorted.filter(
+        (t) => getFiringGroup(t).group === "custom_image"
+      ).length,
+      custom_template: sorted.filter(
+        (t) => getFiringGroup(t).group === "custom_template"
+      ).length
     },
     sequencing_conflicts: sequencingConflicts,
-    total_tags: sorted.length,
+    total_tags: sorted.length
   };
 }
 
@@ -255,9 +309,18 @@ function analyzeTagFiringOrder(store: ContainerStore) {
 
 function analyzeConsentSetup(store: ContainerStore): {
   consent_detected: boolean;
-  consent_management_tags: { tag_id: string; name: string; detection_reason: string }[];
+  consent_management_tags: {
+    tag_id: string;
+    name: string;
+    detection_reason: string;
+  }[];
   consent_variables: { variable_id: string; name: string; type: string }[];
-  consent_blocking_triggers: { trigger_id: string; name: string; type: string; blocked_tags_count: number }[];
+  consent_blocking_triggers: {
+    trigger_id: string;
+    name: string;
+    type: string;
+    blocked_tags_count: number;
+  }[];
   consent_patterns: string[];
   issues: LifecycleIssue[];
   recommendation_summary: string;
@@ -270,7 +333,9 @@ function analyzeConsentSetup(store: ContainerStore): {
   const consentManagementTags = consentTags.map((t) => ({
     tag_id: t.tagId,
     name: t.name,
-    detection_reason: containsConsentKeyword(t.name) ? "tag_name" : "tag_parameters",
+    detection_reason: containsConsentKeyword(t.name)
+      ? "tag_name"
+      : "tag_parameters"
   }));
 
   // 2. Detect consent variables
@@ -278,21 +343,26 @@ function analyzeConsentSetup(store: ContainerStore): {
   const consentVariables = consentVars.map((v) => ({
     variable_id: v.variableId,
     name: v.name,
-    type: v.type,
+    type: v.type
   }));
 
   // 3. Detect consent blocking triggers
-  const consentBlockingTriggers = store.triggers.filter((trigger) => isLikelyConsentBlockingTrigger(trigger, store)).map((t) => ({
-    trigger_id: t.triggerId,
-    name: t.name,
-    type: t.type,
-    blocked_tags_count: store.tags.filter((tag) =>
-      (tag.blockingTriggerId ?? []).includes(t.triggerId)
-    ).length,
-  }));
+  const consentBlockingTriggers = store.triggers
+    .filter((trigger) => isLikelyConsentBlockingTrigger(trigger, store))
+    .map((t) => ({
+      trigger_id: t.triggerId,
+      name: t.name,
+      type: t.type,
+      blocked_tags_count: store.tags.filter((tag) =>
+        (tag.blockingTriggerId ?? []).includes(t.triggerId)
+      ).length
+    }));
 
   // 4. Determine if consent is detected at all
-  const consentDetected = consentTags.length > 0 || consentVars.length > 0 || consentBlockingTriggers.length > 0;
+  const consentDetected =
+    consentTags.length > 0 ||
+    consentVars.length > 0 ||
+    consentBlockingTriggers.length > 0;
 
   // 5. Detect specific consent patterns
   if (consentTags.length > 0) {
@@ -322,17 +392,20 @@ function analyzeConsentSetup(store: ContainerStore): {
     issues.push({
       severity: "warning",
       category: "consent_missing",
-      message: "No consent management detected in a web container. If this site serves users in EEA/UK or under CCPA, Consent Mode v2 is required for Google tags.",
-      recommendation: "Add a consent management tag (e.g., Google Consent Mode) and blocking triggers for data collection tags.",
+      message:
+        "No consent management detected in a web container. If this site serves users in EEA/UK or under CCPA, Consent Mode v2 is required for Google tags.",
+      recommendation:
+        "Add a consent management tag (e.g., Google Consent Mode) and blocking triggers for data collection tags."
     });
   }
 
   // ISSUE: Data collection tags without blocking triggers when consent exists
   if (consentDetected) {
-    const unprotectedTags = store.tags.filter((tag) =>
-      DATA_COLLECTION_TYPES.includes(tag.type) &&
-      (tag.blockingTriggerId ?? []).length === 0 &&
-      tag.enabled !== false
+    const unprotectedTags = store.tags.filter(
+      (tag) =>
+        DATA_COLLECTION_TYPES.includes(tag.type) &&
+        (tag.blockingTriggerId ?? []).length === 0 &&
+        tag.enabled !== false
     );
 
     if (unprotectedTags.length > 0) {
@@ -341,7 +414,8 @@ function analyzeConsentSetup(store: ContainerStore): {
         category: "unprotected_data_collection",
         message: `${unprotectedTags.length} data collection tag(s) have no blocking triggers despite consent management being present. These tags may fire before consent is granted.`,
         affected_tags: unprotectedTags.map((t) => t.name),
-        recommendation: "Add a consent-blocking trigger to these tags to prevent firing before consent is granted.",
+        recommendation:
+          "Add a consent-blocking trigger to these tags to prevent firing before consent is granted."
       });
     }
   }
@@ -349,18 +423,20 @@ function analyzeConsentSetup(store: ContainerStore): {
   // ISSUE: Consent tags firing on All Pages without consent check
   if (consentDetected) {
     for (const consentTag of consentTags) {
-      const firingTriggers = (consentTag.firingTriggerId ?? []).map((id) =>
-        store.triggers.find((t) => t.triggerId === id)
-      ).filter(Boolean) as Trigger[];
+      const firingTriggers = (consentTag.firingTriggerId ?? [])
+        .map((id) => store.triggers.find((t) => t.triggerId === id))
+        .filter(Boolean) as Trigger[];
 
       // Check if consent tag fires on "All Pages" type trigger
-      const firesOnAllPages = firingTriggers.some((t) => t.type === "pageview" && (!t.filter || t.filter.length === 0));
+      const firesOnAllPages = firingTriggers.some(
+        (t) => t.type === "pageview" && (!t.filter || t.filter.length === 0)
+      );
       if (firesOnAllPages) {
         issues.push({
           severity: "info",
           category: "consent_firing_scope",
           message: `Consent tag "${consentTag.name}" fires on all pages. This is typically correct for consent initialization, but verify it does not send data before consent.`,
-          affected_tags: [consentTag.name],
+          affected_tags: [consentTag.name]
         });
       }
     }
@@ -375,7 +451,7 @@ function analyzeConsentSetup(store: ContainerStore): {
           category: "orphaned_blocking_reference",
           message: `Tag "${tag.name}" references non-existent blocking trigger ID "${blockId}". This tag may never fire or behave unpredictably.`,
           affected_tags: [tag.name],
-          recommendation: `Fix or remove the blocking trigger reference "${blockId}" on tag "${tag.name}".`,
+          recommendation: `Fix or remove the blocking trigger reference "${blockId}" on tag "${tag.name}".`
         });
       }
     }
@@ -386,7 +462,10 @@ function analyzeConsentSetup(store: ContainerStore): {
     for (const consentTag of consentTags) {
       const consentGroup = getFiringGroup(consentTag);
       for (const dataTag of store.tags) {
-        if (DATA_COLLECTION_TYPES.includes(dataTag.type) && dataTag.tagId !== consentTag.tagId) {
+        if (
+          DATA_COLLECTION_TYPES.includes(dataTag.type) &&
+          dataTag.tagId !== consentTag.tagId
+        ) {
           const dataGroup = getFiringGroup(dataTag);
           // If consent tag is in a later firing group than data collection tag
           if (consentGroup.priority > dataGroup.priority) {
@@ -395,7 +474,8 @@ function analyzeConsentSetup(store: ContainerStore): {
               category: "consent_timing",
               message: `Consent tag "${consentTag.name}" (${consentGroup.group}) may fire after data collection tag "${dataTag.name}" (${dataGroup.group}). Consent should be set before data collection evaluates.`,
               affected_tags: [consentTag.name, dataTag.name],
-              recommendation: "Move the consent tag to a higher-priority firing group (e.g., use a Google tag type or ensure lower tagId), or add sequencing.",
+              recommendation:
+                "Move the consent tag to a higher-priority firing group (e.g., use a Google tag type or ensure lower tagId), or add sequencing."
             });
           }
         }
@@ -406,13 +486,17 @@ function analyzeConsentSetup(store: ContainerStore): {
   // Build recommendation summary
   let recommendationSummary = "";
   if (!consentDetected) {
-    recommendationSummary = "No consent management detected. Consider implementing Consent Mode v2 if your site serves users in regulated regions.";
+    recommendationSummary =
+      "No consent management detected. Consider implementing Consent Mode v2 if your site serves users in regulated regions.";
   } else if (issues.some((i) => i.severity === "critical")) {
-    recommendationSummary = "Consent management is partially configured but has critical issues. Review unprotected data collection tags and orphaned trigger references.";
+    recommendationSummary =
+      "Consent management is partially configured but has critical issues. Review unprotected data collection tags and orphaned trigger references.";
   } else if (issues.length > 0) {
-    recommendationSummary = "Consent management is configured with minor issues. Review timing and scope recommendations.";
+    recommendationSummary =
+      "Consent management is configured with minor issues. Review timing and scope recommendations.";
   } else {
-    recommendationSummary = "Consent management appears properly configured. All data collection tags have blocking triggers and consent tags fire in the correct lifecycle phase.";
+    recommendationSummary =
+      "Consent management appears properly configured. All data collection tags have blocking triggers and consent tags fire in the correct lifecycle phase.";
   }
 
   return {
@@ -422,7 +506,7 @@ function analyzeConsentSetup(store: ContainerStore): {
     consent_blocking_triggers: consentBlockingTriggers,
     consent_patterns: consentPatterns,
     issues,
-    recommendation_summary: recommendationSummary,
+    recommendation_summary: recommendationSummary
   };
 }
 
@@ -432,13 +516,16 @@ function analyzeConsentSetup(store: ContainerStore): {
 
 const DATA_COLLECTION_TYPES = ["gaawe", "googtag", "awct", "ua", "html", "img"];
 
-function getTagLifecyclePhase(tag: Tag, store: ContainerStore): string {
+function getTagLifecyclePhase(tag: Tag, _store: ContainerStore): string {
   if (isConsentManagementTag(tag)) return "consent_management";
   if (DATA_COLLECTION_TYPES.includes(tag.type)) return "data_collection";
   return "other";
 }
 
-function getTagLifecycle(tag: Tag, store: ContainerStore): {
+function getTagLifecycle(
+  tag: Tag,
+  store: ContainerStore
+): {
   tag_id: string;
   tag_name: string;
   tag_type: string;
@@ -459,6 +546,7 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
     fires_before: string[];
   };
   consent_related: boolean;
+  consent_settings: unknown;
   issues: LifecycleIssue[];
 } {
   const issues: LifecycleIssue[] = [];
@@ -468,23 +556,26 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
   const sameGroupTags = store.tags
     .filter((t) => getFiringGroup(t).group === group && t.enabled !== false)
     .sort((a, b) => Number(a.tagId) - Number(b.tagId));
-  const positionInGroup = sameGroupTags.findIndex((t) => t.tagId === tag.tagId) + 1;
+  const positionInGroup =
+    sameGroupTags.findIndex((t) => t.tagId === tag.tagId) + 1;
 
   // Sequencing
   const deps = getSequencingDependencies(tag);
-  const firesBefore = store.tags.filter((t) => {
-    const tDeps = getSequencingDependencies(t);
-    return tDeps.firesAfter.includes(tag.tagId);
-  }).map((t) => t.name);
+  const firesBefore = store.tags
+    .filter((t) => {
+      const tDeps = getSequencingDependencies(t);
+      return tDeps.firesAfter.includes(tag.tagId);
+    })
+    .map((t) => t.name);
 
   // Resolve trigger names
   const firingTriggers = (tag.firingTriggerId ?? []).map((id) => ({
     id,
-    name: resolveTriggerName(id, store.triggers) ?? id,
+    name: resolveTriggerName(id, store.triggers) ?? id
   }));
   const blockingTriggers = (tag.blockingTriggerId ?? []).map((id) => ({
     id,
-    name: resolveTriggerName(id, store.triggers) ?? id,
+    name: resolveTriggerName(id, store.triggers) ?? id
   }));
 
   // Per-tag issues
@@ -492,19 +583,26 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
 
   // Check: data collection tag with no blocking trigger in a consent-enabled container
   // Skip if the tag already has built-in consent gating (consentStatus !== "NOT_NEEDED")
-  const tagHasConsentGating = tag.consentSettings?.consentStatus &&
+  const tagHasConsentGating =
+    tag.consentSettings?.consentStatus &&
     tag.consentSettings.consentStatus !== "NOT_NEEDED";
 
-  const hasConsentSetup = store.tags.some(isConsentManagementTag) ||
+  const hasConsentSetup =
+    store.tags.some(isConsentManagementTag) ||
     store.triggers.some((t) => isLikelyConsentBlockingTrigger(t, store)) ||
     store.variables.some(isConsentVariable);
 
-  if (lifecyclePhase === "data_collection" && hasConsentSetup && blockingTriggers.length === 0 && !tagHasConsentGating) {
+  if (
+    lifecyclePhase === "data_collection" &&
+    hasConsentSetup &&
+    blockingTriggers.length === 0 &&
+    !tagHasConsentGating
+  ) {
     issues.push({
       severity: "critical",
       category: "unprotected_data_collection",
       message: `This data collection tag has no blocking triggers in a consent-enabled container. It may fire before consent is granted.`,
-      recommendation: "Add a consent-blocking trigger.",
+      recommendation: "Add a consent-blocking trigger."
     });
   }
 
@@ -515,7 +613,7 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
         severity: "critical",
         category: "orphaned_firing_reference",
         message: `Firing trigger ID "${ft.id}" does not exist in the container.`,
-        recommendation: "Fix the trigger reference.",
+        recommendation: "Fix the trigger reference."
       });
     }
   }
@@ -527,7 +625,7 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
         severity: "critical",
         category: "orphaned_blocking_reference",
         message: `Blocking trigger ID "${bt.id}" does not exist in the container.`,
-        recommendation: "Fix the trigger reference.",
+        recommendation: "Fix the trigger reference."
       });
     }
   }
@@ -537,8 +635,9 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
     issues.push({
       severity: "warning",
       category: "no_firing_triggers",
-      message: "This tag has no firing triggers configured. It will never fire.",
-      recommendation: "Add at least one firing trigger.",
+      message:
+        "This tag has no firing triggers configured. It will never fire.",
+      recommendation: "Add at least one firing trigger."
     });
   }
 
@@ -547,7 +646,7 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
     issues.push({
       severity: "info",
       category: "disabled_tag",
-      message: "This tag is disabled and will not fire.",
+      message: "This tag is disabled and will not fire."
     });
   }
 
@@ -561,7 +660,8 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
             severity: "warning",
             category: "consent_timing",
             message: `This consent tag fires in group "${group}" after data collection tag "${dcTag.name}" in group "${dcGroup.group}".`,
-            recommendation: "Ensure consent is set before data collection tags evaluate.",
+            recommendation:
+              "Ensure consent is set before data collection tags evaluate."
           });
         }
       }
@@ -578,25 +678,28 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
     firing_order: {
       group,
       priority,
-      position_in_group: positionInGroup,
+      position_in_group: positionInGroup
     },
     triggers: {
       firing: firingTriggers,
-      blocking: blockingTriggers,
+      blocking: blockingTriggers
     },
     sequencing: {
       fires_after: deps.firesAfter.map((id) => {
         const t = store.tags.find((tg) => tg.tagId === id);
         return t ? t.name : id;
       }),
-      fires_before: firesBefore,
+      fires_before: firesBefore
     },
-    consent_related: isConsentManagementTag(tag) || tagHasConsentGating || blockingTriggers.some((bt) => {
-      const trig = store.triggers.find((t) => t.triggerId === bt.id);
-      return trig && isLikelyConsentBlockingTrigger(trig, store);
-    }),
+    consent_related:
+      isConsentManagementTag(tag) ||
+      tagHasConsentGating ||
+      blockingTriggers.some((bt) => {
+        const trig = store.triggers.find((t) => t.triggerId === bt.id);
+        return trig && isLikelyConsentBlockingTrigger(trig, store);
+      }),
     consent_settings: tag.consentSettings ?? null,
-    issues,
+    issues
   };
 }
 
@@ -614,9 +717,11 @@ export function registerLifecycleTools(store: ContainerStore) {
       handler: async () => {
         const result = analyzeTagFiringOrder(store);
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) }
+          ]
         };
-      },
+      }
     },
     {
       name: "gtm_analyze_consent_setup",
@@ -626,9 +731,11 @@ export function registerLifecycleTools(store: ContainerStore) {
       handler: async () => {
         const result = analyzeConsentSetup(store);
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) }
+          ]
         };
-      },
+      }
     },
     {
       name: "gtm_get_tag_lifecycle",
@@ -636,7 +743,10 @@ export function registerLifecycleTools(store: ContainerStore) {
         "Get detailed lifecycle analysis for a specific tag. Reports the lifecycle phase (consent_management, data_collection, other), firing order position, trigger configuration, sequencing dependencies, consent relationships, and per-tag issues. Use to debug why a specific tag might fire at the wrong time or violate consent requirements. Requires a loaded container.",
       parameters: z.object({
         tag_id: z.string().optional().describe("Tag ID to analyze"),
-        name: z.string().optional().describe("Tag name to analyze (alternative to tag_id)"),
+        name: z
+          .string()
+          .optional()
+          .describe("Tag name to analyze (alternative to tag_id)")
       }),
       handler: async ({ tag_id, name }: { tag_id?: string; name?: string }) => {
         let tag: Tag | undefined;
@@ -646,26 +756,30 @@ export function registerLifecycleTools(store: ContainerStore) {
           tag = store.tags.find((t) => t.name === name);
         }
         if (!tag) {
-          throw new Error(`Tag not found. Provided: tag_id=${tag_id ?? "none"}, name=${name ?? "none"}`);
+          throw new Error(
+            `Tag not found. Provided: tag_id=${tag_id ?? "none"}, name=${name ?? "none"}`
+          );
         }
         const result = getTagLifecycle(tag, store);
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          content: [
+            { type: "text" as const, text: JSON.stringify(result, null, 2) }
+          ]
         };
-      },
-    },
+      }
+    }
   ];
 }
 
 // Export helpers for testing
 export {
+  analyzeConsentSetup,
+  analyzeTagFiringOrder,
   getFiringGroup,
+  getSequencingDependencies,
+  getTagLifecycle,
+  getTagLifecyclePhase,
   isConsentManagementTag,
   isConsentVariable,
-  isLikelyConsentBlockingTrigger,
-  getSequencingDependencies,
-  getTagLifecyclePhase,
-  analyzeTagFiringOrder,
-  analyzeConsentSetup,
-  getTagLifecycle,
+  isLikelyConsentBlockingTrigger
 };

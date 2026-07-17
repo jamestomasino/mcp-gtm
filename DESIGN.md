@@ -471,42 +471,42 @@ LLM → gtm_diff_containers(file_a="staging.json", file_b="prod.json")
 - [x] Export tool (write state to JSON file)
 - [x] Round-trip tests (load → modify → export → reload)
 
-### Phase 3: Analysis & Polish ⚠️ MOSTLY COMPLETE
+### Phase 3: Analysis & Polish ✅ COMPLETE
 - [x] Analysis tools (dependencies, unused entities, orphaned triggers)
 - [x] Container diff tool
 - [x] Full validation tool
 - [x] Documentation and README
 - [x] MCP Resources (4: container_state, tags, triggers, variables)
-- [x] MCP Prompts (4: inspect, audit, debug, compare)
-- [ ] Per-tool unit tests (`tests/tools/` is empty)
-- [ ] MCP protocol integration tests
+- [x] MCP Prompts (5: inspect, audit, debug, compare, audit_consent)
+- [x] Per-tool unit tests (12 test groups, 181 tests)
+- [x] MCP protocol integration tests (7 tests)
+- [x] Read-only mode via `GTM_READ_ONLY` env var
 - [ ] Publish to npm
 
-### Phase 4: Advanced 🔲 NOT STARTED
-- [ ] Server-side GTM entities (zones, clients, transformations)
-- [ ] Folder management improvements (move triggers/variables to folders)
-- [ ] Custom template support
-- [ ] MCP resources for container state snapshots
-- [ ] MCP prompts for common workflows
-- [ ] Read-only mode config flag
+### Phase 4: Advanced ✅ COMPLETE
+- [x] Server-side GTM entities (zones, clients, transformations) — schemas, store getters, 6 read tools
+- [x] Folder management improvements (move triggers/variables to folders) — 2 new tools
+- [x] Custom template support — schema, store getter, 2 read tools
+- [x] Lifecycle tools (firing order, consent analysis, tag lifecycle) — 3 tools
+- [x] Read-only mode config flag (`GTM_READ_ONLY` env var)
 
 ---
 
-## Status Update (2026-07-16)
+## Status Update (2026-07-17)
 
 ### Build Health
-- **Tests**: 34 / 34 passing (2 test files: `store.test.ts`, `roundtrip.test.ts`)
-- **Build**: `dist/` compiled and up-to-date
-- **Git**: Clean, on `main`, single commit
+- **Tests**: 181 / 181 passing (14 test files)
+- **Build**: Clean TypeScript compilation, Biome linter passes
+- **Git**: On `main`
 
 ### Implementation Status
 
 #### Phase 1: Foundation — ✅ COMPLETE
 - [x] Scaffold TypeScript project with MCP SDK
-- [x] Zod schemas (export, tag, trigger, variable, folder, container, parameter, condition)
+- [x] Zod schemas (export, tag, trigger, variable, folder, container, parameter, condition, customTemplate, serverSide)
 - [x] ContainerStore (load, in-memory state, CRUD, export, validate)
 - [x] Read-only tools (load, list tags/triggers/variables, get entity)
-- [x] Test fixtures (`simple.json`, `complex.json`) and unit tests
+- [x] Test fixtures (`simple.json`, `complex.json`, `consent.json`, `workspace-format.json`) and unit tests
 
 #### Phase 2: Write Operations — ✅ COMPLETE
 - [x] Tag CRUD tools with validation (list, get, create, update, delete, find_by_type)
@@ -521,23 +521,25 @@ LLM → gtm_diff_containers(file_a="staging.json", file_b="prod.json")
 - [x] Container diff tool
 - [x] Full validation tool
 - [x] MCP Resources (4: container_state, container_tags, container_triggers, container_variables)
-- [x] MCP Prompts (4: inspect_container, audit_container, debug_tag, compare_containers)
+- [x] MCP Prompts (5: inspect_container, audit_container, debug_tag, compare_containers, audit_consent)
 - [x] Auto-load from `GTM_CONTAINER_FILE` env var
 - [x] README.md with full documentation
-- [x] Per-tool unit tests (7 tool groups, 75 tests)
-- [x] MCP protocol integration tests (6 tests)
+- [x] Per-tool unit tests (12 test groups, 181 tests)
+- [x] MCP protocol integration tests (7 tests)
 - [x] Read-only mode via `GTM_READ_ONLY` env var
+- [x] Workspace export format normalization
 - [ ] Publish to npm
 
 #### Phase 4: Advanced — ✅ COMPLETE
 - [x] Server-side GTM entities (zones, clients, transformations) — schemas, store getters, 6 read tools
 - [x] Folder management improvements (move triggers/variables to folders) — 2 new tools
 - [x] Custom template support — schema, store getter, 2 read tools
+- [x] Lifecycle tools (tag firing order, consent setup analysis, per-tag lifecycle) — 3 tools
 - [x] Read-only mode config flag (`GTM_READ_ONLY` env var)
 
-### Tool Inventory (31 tools, 4 resources, 4 prompts)
+### Tool Inventory (44 tools, 4 resources, 5 prompts)
 
-All 31 tools from the design spec are implemented and registered in `src/index.ts`. The tool groups are:
+All tools are implemented and registered in `src/index.ts`. The tool groups are:
 
 | Group | File | Tools |
 |-------|------|-------|
@@ -545,25 +547,31 @@ All 31 tools from the design spec are implemented and registered in `src/index.t
 | Tags | `tools/tags.ts` | list_tags, get_tag, create_tag, update_tag, delete_tag, find_tags_by_type |
 | Triggers | `tools/triggers.ts` | list_triggers, get_trigger, create_trigger, update_trigger, delete_trigger |
 | Variables | `tools/variables.ts` | list_variables, get_variable, create_variable, update_variable, delete_variable, list_builtin_variables |
-| Folders | `tools/folders.ts` | list_folders, get_folder, create_folder, delete_folder, move_tag_to_folder |
+| Folders | `tools/folders.ts` | list_folders, get_folder, create_folder, delete_folder, move_tag_to_folder, move_trigger_to_folder, move_variable_to_folder |
 | Analysis | `tools/analysis.ts` | get_tag_dependencies, find_unused_entities, find_orphaned_triggers, validate_container |
+| Lifecycle | `tools/lifecycle.ts` | analyze_tag_firing_order, analyze_consent_setup, get_tag_lifecycle |
+| Server-Side | `tools/serverSide.ts` | list_zones, get_zone, list_clients, get_client, list_transformations, get_transformation, list_custom_templates, get_custom_template |
 | Export | `tools/export.ts` | export_container, diff_containers |
 
 ### Where We Left Off
 
-The crash occurred after Phase 2 was complete and Phase 3 analysis tools were implemented. The next items to tackle are:
+All planned phases are complete. The project has 44 tools, 4 resources, 5 prompts, and 181 passing tests.
 
-1. **Add per-tool tests** — `tests/tools/` directory exists but is empty. Each tool group needs its own test file verifying correct responses and error handling.
-2. **Add MCP integration tests** — Full protocol round-trip tests using the MCP SDK test harness.
-3. **Publish to npm** — Finalize `package.json` and publish.
-4. **Phase 4 features** — Server-side GTM entities, custom templates, read-only mode.
+**Next steps:**
+1. **Publish to npm** — Finalize `package.json` and publish.
+2. **CI/CD** — Add GitHub Actions for automated testing.
+3. **Structured error handling** — Improve error categorization in tool responses.
+4. **Undo/redo** — Add undo stack for in-memory mutations.
+5. **Search tool** — Add full-text search across entity names and notes.
 
 ---
 
 ## 9. Open Questions
 
-1. **Auto-load vs explicit load**: Should the server auto-load a container from `GTM_CONTAINER_FILE` on startup, or require an explicit `gtm_load_container` call?
-2. **Multiple containers**: Should the server support loading multiple containers and switching between them?
-3. **Read-only mode**: Should there be a config flag to disable all write tools?
-4. **Schema strictness**: How strict should Zod validation be? GTM exports from the UI may have fields not in the API schema (e.g., `enabled` on tags). Should we use `.passthrough()` or `.strict()`?
-5. **Entity type lookup**: Should we bundle a type-code-to-human-readable-name map so the LLM can interpret `gaawe` as "GA4 Event" without guessing?
+All original open questions have been resolved:
+
+1. **Auto-load vs explicit load** → Both supported. `GTM_CONTAINER_FILE` env var auto-loads; `gtm_load_container` allows explicit swap.
+2. **Multiple containers** → Single container at a time. Reload via `gtm_load_container` to swap.
+3. **Read-only mode** → Implemented via `GTM_READ_ONLY` env var.
+4. **Schema strictness** → Using `.passthrough()` — GTM exports may have extra fields not in the API schema.
+5. **Entity type lookup** → Bundled in `utils/typeCodes.ts` with maps for tags, triggers, and variables.
