@@ -1,0 +1,178 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "2026-07-17 12:00:00",
+  "containerVersion": {
+    "path": "accounts/99999999/containers/99999999/versions/0",
+    "accountId": "99999999",
+    "containerId": "99999999",
+    "containerVersionId": "0",
+    "container": {
+      "path": "accounts/99999999/containers/99999999",
+      "accountId": "99999999",
+      "containerId": "99999999",
+      "name": "Workspace Format Test Container",
+      "publicId": "GTM-TEST000",
+      "usageContext": ["WEB"],
+      "fingerprint": "1700000000000",
+      "features": {
+        "supportUserPermissions": true,
+        "supportEnvironments": true,
+        "supportWorkspaces": true,
+        "supportBuiltInVariables": true,
+        "supportFolders": true,
+        "supportTags": true,
+        "supportTriggers": true,
+        "supportVariables": true
+      },
+      "tagIds": ["GTM-TEST000"]
+    },
+    "tag": [
+      {
+        "accountId": "99999999",
+        "containerId": "99999999",
+        "tagId": "1",
+        "name": "GA4 Config",
+        "type": "googtag",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "tagId", "value": "{{GA4 ID}}" },
+          { "type": "BOOLEAN", "key": "supportsGtag", "value": "true" }
+        ],
+        "fingerprint": "1700000001000",
+        "firingTriggerId": ["1"],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "consentSettings": { "consentStatus": "NOT_NEEDED" }
+      },
+      {
+        "accountId": "99999999",
+        "containerId": "99999999",
+        "tagId": "2",
+        "name": "GA4 Event Tag",
+        "type": "gaawe",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "configurationTagId", "value": "{{GA4 ID}}" },
+          { "type": "TEMPLATE", "key": "eventName", "value": "{{Event Name}}" }
+        ],
+        "fingerprint": "1700000002000",
+        "firingTriggerId": ["2"],
+        "consentSettings": { "consentStatus": "NOT_NEEDED" }
+      },
+      {
+        "accountId": "99999999",
+        "containerId": "99999999",
+        "tagId": "3",
+        "name": "Unused Tag",
+        "type": "html",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "html", "value": "<div>unused</div>" }
+        ],
+        "fingerprint": "1700000003000",
+        "firingTriggerId": ["99"],
+        "consentSettings": { "consentStatus": "NOT_NEEDED" }
+      }
+    ],
+    "trigger": [
+      {
+        "accountId": "99999999",
+        "containerId": "99999999",
+        "triggerId": "1",
+        "name": "All Pages",
+        "type": "pageview",
+        "filter": [],
+        "fingerprint": "1700000010000"
+      },
+      {
+        "accountId": "99999999",
+        "containerId": "99999999",
+        "triggerId": "2",
+        "name": "Button Click",
+        "type": "click",
+        "filter": [
+          {
+            "type": "equals",
+            "parameter": [
+              { "key": "arg0", "type": "field", "value": { "field": "clickClasses" } },
+              { "key": "arg1", "type": "template", "value": "btn-submit" }
+            ]
+          }
+        ],
+        "fingerprint": "1700000020000"
+      },
+      {
+        "accountId": "99999999",
+        "containerId": "99999999",
+        "triggerId": "3",
+        "name": "Orphaned Trigger",
+        "type": "custom",
+        "filter": [
+          {
+            "type": "equals",
+            "parameter": [
+              { "key": "arg0", "type": "field", "value": { "field": "event" } },
+              { "key": "arg1", "type": "template", "value": "unused_event" }
+            ]
+          }
+        ],
+        "fingerprint": "1700000030000"
+      }
+    ],
+    "variable": [
+      {
+        "accountId": "99999999",
+        "containerId": "99999999",
+        "variableId": "1",
+        "name": "GA4 ID",
+        "type": "c",
+        "parameter": [
+          { "type": "template", "key": "constant", "value": "G-TEST9999" }
+        ],
+        "fingerprint": "1700000100000"
+      },
+      {
+        "accountId": "99999999",
+        "containerId": "99999999",
+        "variableId": "2",
+        "name": "Event Name",
+        "type": "v",
+        "parameter": [
+          { "type": "number", "key": "dataLayerVersion", "value": "2" },
+          { "type": "template", "key": "name", "value": "event" }
+        ],
+        "fingerprint": "1700000110000"
+      },
+      {
+        "accountId": "99999999",
+        "containerId": "99999999",
+        "variableId": "3",
+        "name": "Unused Variable",
+        "type": "v",
+        "parameter": [
+          { "type": "number", "key": "dataLayerVersion", "value": "2" },
+          { "type": "template", "key": "name", "value": "unused_field" }
+        ],
+        "fingerprint": "1700000120000"
+      }
+    ],
+    "builtInVariable": [
+      { "name": "Page Path", "type": "pagePath" },
+      { "name": "Page URL", "type": "pageUrl" }
+    ],
+    "customTemplate": [
+      {
+        "accountId": "99999999",
+        "containerId": "99999999",
+        "templateId": "1",
+        "name": "Custom Template Without Type",
+        "fingerprint": "1700000200000",
+        "templateData": {
+          "field": [],
+          "iconRaw": "",
+          "subtitleRaw": "",
+          "editorScriptRaw": "google.tagmanager.templates.someTemplate = {};"
+        },
+        "galleryReference": {}
+      }
+    ],
+    "fingerprint": "1700000000000",
+    "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/99999999/containers/99999999/workspaces"
+  }
+}

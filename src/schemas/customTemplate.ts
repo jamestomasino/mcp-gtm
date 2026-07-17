@@ -8,7 +8,7 @@ export const CustomTemplateSchema = z.object({
   templateId: z.string(),
   fingerprint: z.string().optional(),
   name: z.string(),
-  type: z.string(), // tag, trigger, variable
+  type: z.string().optional(), // tag, trigger, variable (may be absent in workspace exports)
   field: z.array(z.any()).optional().default([]),
   iconRaw: z.string().optional(),
   subtitleRaw: z.string().optional(),
