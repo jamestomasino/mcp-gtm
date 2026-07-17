@@ -1,0 +1,275 @@
+{
+  "exportTime": "2026-07-17T10:00:00.000Z",
+  "containerVersion": {
+    "accountId": "88888888",
+    "containerId": "99999999",
+    "containerVersionId": "5",
+    "fingerprint": "consent_fp",
+    "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/88888888/containers/99999999",
+    "container": {
+      "name": "Consent Mode Test Container",
+      "usageContext": [1],
+      "defaultTimezone": "Europe/Berlin",
+      "description": "Test container with consent mode v2 setup for lifecycle analysis",
+      "tag": [
+        {
+          "tagId": "1",
+          "fingerprint": "fp_consent_1",
+          "name": "Consent Mode - Default Denied",
+          "type": "googtag",
+          "enabled": true,
+          "parameter": [
+            { "key": "command", "value": "default" },
+            { "key": "ad_storage", "value": "denied" },
+            { "key": "analytics_storage", "value": "denied" },
+            { "key": "functionality_storage", "value": "denied" },
+            { "key": "personalization_storage", "value": "denied" }
+          ],
+          "firingTriggerId": ["1"],
+          "blockingTriggerId": [],
+          "parentFolderId": "1"
+        },
+        {
+          "tagId": "2",
+          "fingerprint": "fp_consent_2",
+          "name": "GA4 Configuration",
+          "type": "gaawe",
+          "enabled": true,
+          "parameter": [
+            { "key": "configurationId", "value": "G-TEST1234" },
+            { "key": "eventName", "value": "page_view" }
+          ],
+          "firingTriggerId": ["1"],
+          "blockingTriggerId": ["5"],
+          "parentFolderId": "2"
+        },
+        {
+          "tagId": "3",
+          "fingerprint": "fp_consent_3",
+          "name": "GA4 Purchase Event",
+          "type": "gaawe",
+          "enabled": true,
+          "parameter": [
+            { "key": "configurationId", "value": "G-TEST1234" },
+            { "key": "eventName", "value": "purchase" }
+          ],
+          "firingTriggerId": ["3"],
+          "blockingTriggerId": ["5"],
+          "parentFolderId": "2"
+        },
+        {
+          "tagId": "4",
+          "fingerprint": "fp_consent_4",
+          "name": "Google Ads Conversion",
+          "type": "awct",
+          "enabled": true,
+          "parameter": [
+            { "key": "conversionId", "value": "AW-TEST999" },
+            { "key": "conversionLabel", "value": "testLabel123" }
+          ],
+          "firingTriggerId": ["3"],
+          "blockingTriggerId": [],
+          "parentFolderId": "3"
+        },
+        {
+          "tagId": "5",
+          "fingerprint": "fp_consent_5",
+          "name": "Facebook Pixel PageView",
+          "type": "html",
+          "enabled": true,
+          "parameter": [
+            { "key": "html", "value": "<script>fbq('track', 'PageView');</script>" }
+          ],
+          "firingTriggerId": ["1"],
+          "blockingTriggerId": ["5"],
+          "parentFolderId": "3"
+        },
+        {
+          "tagId": "6",
+          "fingerprint": "fp_consent_6",
+          "name": "Hotjar Tracking",
+          "type": "html",
+          "enabled": true,
+          "parameter": [
+            { "key": "html", "value": "<script>hj.load(1234567);</script>" }
+          ],
+          "firingTriggerId": ["1"],
+          "blockingTriggerId": [],
+          "parentFolderId": "3"
+        },
+        {
+          "tagId": "7",
+          "fingerprint": "fp_consent_7",
+          "name": "Custom Image Tracker",
+          "type": "img",
+          "enabled": true,
+          "parameter": [
+            { "key": "imageUrl", "value": "https://tracker.example.com/pixel.gif" }
+          ],
+          "firingTriggerId": ["1"],
+          "blockingTriggerId": ["5"],
+          "parentFolderId": "3"
+        },
+        {
+          "tagId": "8",
+          "fingerprint": "fp_consent_8",
+          "name": "Disabled Tag - Old Pixel",
+          "type": "img",
+          "enabled": false,
+          "parameter": [
+            { "key": "imageUrl", "value": "https://old.example.com/pixel.gif" }
+          ],
+          "firingTriggerId": ["1"],
+          "blockingTriggerId": ["5"],
+          "parentFolderId": "3"
+        },
+        {
+          "tagId": "9",
+          "fingerprint": "fp_consent_9",
+          "name": "Tag With Orphaned Blocking Trigger",
+          "type": "gaawe",
+          "enabled": true,
+          "parameter": [
+            { "key": "configurationId", "value": "G-TEST1234" },
+            { "key": "eventName", "value": "scroll" }
+          ],
+          "firingTriggerId": ["2"],
+          "blockingTriggerId": ["99"],
+          "parentFolderId": "2"
+        },
+        {
+          "tagId": "10",
+          "fingerprint": "fp_consent_10",
+          "name": "Tag With No Firing Triggers",
+          "type": "html",
+          "enabled": true,
+          "parameter": [
+            { "key": "html", "value": "<script>console.log('orphan');</script>" }
+          ],
+          "firingTriggerId": [],
+          "blockingTriggerId": [],
+          "parentFolderId": "3"
+        }
+      ],
+      "trigger": [
+        {
+          "triggerId": "1",
+          "fingerprint": "fp_trig_1",
+          "name": "All Pages",
+          "type": "pageview",
+          "filter": []
+        },
+        {
+          "triggerId": "2",
+          "fingerprint": "fp_trig_2",
+          "name": "Scroll 50%",
+          "type": "scroll",
+          "filter": []
+        },
+        {
+          "triggerId": "3",
+          "fingerprint": "fp_trig_3",
+          "name": "Purchase Event",
+          "type": "custom",
+          "filter": [
+            {
+              "type": "equals",
+              "parameter": [
+                { "key": "arg0", "type": "field", "value": { "field": "event" } },
+                { "key": "arg1", "type": "template", "value": "purchase" }
+              ]
+            }
+          ]
+        },
+        {
+          "triggerId": "5",
+          "fingerprint": "fp_trig_5",
+          "name": "Consent Granted - Block Until Accepted",
+          "type": "custom",
+          "filter": [
+            {
+              "type": "equals",
+              "parameter": [
+                { "key": "arg0", "type": "field", "value": { "field": "event" } },
+                { "key": "arg1", "type": "template", "value": "consent_granted" }
+              ]
+            }
+          ]
+        },
+        {
+          "triggerId": "6",
+          "fingerprint": "fp_trig_6",
+          "name": "Orphaned Trigger",
+          "type": "click",
+          "filter": []
+        }
+      ],
+      "userDefinedVariable": [
+        {
+          "variableId": "1",
+          "fingerprint": "fp_var_1",
+          "name": "Consent Status",
+          "type": "v",
+          "parameter": [
+            { "key": "dataLayerVersion", "value": "2" },
+            { "key": "name", "value": "consent_status" }
+          ]
+        },
+        {
+          "variableId": "2",
+          "fingerprint": "fp_var_2",
+          "name": "Page URL",
+          "type": "u",
+          "parameter": [
+            { "key": "dataLayerVersion", "value": "2" },
+            { "key": "urlField", "value": { "field": "HOST" } }
+          ]
+        },
+        {
+          "variableId": "3",
+          "fingerprint": "fp_var_3",
+          "name": "Event Name",
+          "type": "v",
+          "parameter": [
+            { "key": "dataLayerVersion", "value": "2" },
+            { "key": "name", "value": "event" }
+          ]
+        },
+        {
+          "variableId": "4",
+          "fingerprint": "fp_var_4",
+          "name": "GDPR Region Check",
+          "type": "jsm",
+          "parameter": [
+            { "key": "dataLayerVersion", "value": "2" },
+            { "key": "javascript", "value": "function() { return {{Page URL}}.includes('eu'); }" }
+          ]
+        }
+      ],
+      "folder": [
+        {
+          "folderId": "1",
+          "fingerprint": "fp_folder_1",
+          "name": "Consent Management",
+          "tagId": ["1"]
+        },
+        {
+          "folderId": "2",
+          "fingerprint": "fp_folder_2",
+          "name": "Analytics",
+          "tagId": ["2", "3", "9"]
+        },
+        {
+          "folderId": "3",
+          "fingerprint": "fp_folder_3",
+          "name": "Advertising & Third Party",
+          "tagId": ["4", "5", "6", "7", "8", "10"]
+        }
+      ],
+      "builtInVariable": [
+        { "name": "Page Path", "type": "pagePath" },
+        { "name": "Page URL", "type": "pageUrl" }
+      ]
+    }
+  }
+}

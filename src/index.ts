@@ -12,6 +12,7 @@ import { registerFolderTools } from "./tools/folders";
 import { registerAnalysisTools } from "./tools/analysis";
 import { registerExportTools } from "./tools/export";
 import { registerServerSideTools } from "./tools/serverSide";
+import { registerLifecycleTools } from "./tools/lifecycle";
 
 const store = new ContainerStore();
 
@@ -38,6 +39,7 @@ const allTools = [
   ...registerAnalysisTools(store),
   ...registerExportTools(store),
   ...registerServerSideTools(store),
+  ...registerLifecycleTools(store),
 ];
 
 const toolsToRegister = readOnly ? allTools.filter((t) => !isWriteTool(t.name)) : allTools;

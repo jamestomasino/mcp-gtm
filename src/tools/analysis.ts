@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ContainerStore } from "../store";
 import { resolveTriggerNames } from "../utils/entity";
-import { getVariableTypeName } from "../utils/typeCodes";
+import { getVariableTypeName, getTriggerTypeName, getTagTypeName } from "../utils/typeCodes";
 
 /**
  * Extract all {{variable}} references from a parameter list.
@@ -148,7 +148,7 @@ export function registerAnalysisTools(store: ContainerStore) {
         entity_type: z.enum(["tags", "triggers", "variables", "all"]).optional().default("all").describe("Which entity type to check"),
       }),
       handler: async ({ entity_type }: { entity_type: string }) => {
-        const result: Record<string, { id: string; name: string; type: string; type_name: string }[]> = {};
+        const result: Record<string, { id: string; name: string; type?: string; type_name?: string }[]> = {};
 
         if (entity_type === "triggers" || entity_type === "all") {
           // A trigger is unused if no tag fires on it (firing or blocking)
@@ -159,7 +159,7 @@ export function registerAnalysisTools(store: ContainerStore) {
           });
           result.triggers = store.triggers
             .filter((t) => !usedTriggerIds.has(t.triggerId))
-            .map((t) => ({ id: t.triggerId, name: t.name }));
+            .map((t) => ({ id: t.triggerId, name: t.name, type: t.type, type_name: getTriggerTypeName(t.type) }));
         }
 
         if (entity_type === "variables" || entity_type === "all") {
@@ -179,7 +179,7 @@ export function registerAnalysisTools(store: ContainerStore) {
           // Tags are "unused" if they're disabled
           result.tags = store.tags
             .filter((t) => !t.enabled)
-            .map((t) => ({ id: t.tagId, name: t.name }));
+            .map((t) => ({ id: t.tagId, name: t.name, type: t.type, type_name: getTagTypeName(t.type) }));
         }
 
         return {
