@@ -33,9 +33,12 @@ export function registerSearchTools(store: ContainerStore) {
         case_sensitive
       }: {
         query: string;
-        entity_type: string;
-        case_sensitive: boolean;
+        entity_type?: string;
+        case_sensitive?: boolean;
       }) => {
+        const et = entity_type ?? "all";
+        const cs = case_sensitive ?? false;
+
         const results: Array<{
           entity_type: string;
           id: string;
@@ -48,11 +51,11 @@ export function registerSearchTools(store: ContainerStore) {
 
         const match = (text: string | undefined | null): boolean => {
           if (!text) return false;
-          if (case_sensitive) return text.includes(query);
+          if (cs) return text.includes(query);
           return text.toLowerCase().includes(query.toLowerCase());
         };
 
-        if (entity_type === "tags" || entity_type === "all") {
+        if (et === "tags" || et === "all") {
           for (const tag of store.tags) {
             const nameMatch = match(tag.name);
             const notesMatch = match(tag.notes);
@@ -70,7 +73,7 @@ export function registerSearchTools(store: ContainerStore) {
           }
         }
 
-        if (entity_type === "triggers" || entity_type === "all") {
+        if (et === "triggers" || et === "all") {
           for (const trigger of store.triggers) {
             const nameMatch = match(trigger.name);
             const notesMatch = match(trigger.notes);
@@ -87,7 +90,7 @@ export function registerSearchTools(store: ContainerStore) {
           }
         }
 
-        if (entity_type === "variables" || entity_type === "all") {
+        if (et === "variables" || et === "all") {
           for (const variable of store.variables) {
             const nameMatch = match(variable.name);
             const notesMatch = match(variable.notes);
@@ -104,7 +107,7 @@ export function registerSearchTools(store: ContainerStore) {
           }
         }
 
-        if (entity_type === "folders" || entity_type === "all") {
+        if (et === "folders" || et === "all") {
           for (const folder of store.folders) {
             const nameMatch = match(folder.name);
             const notesMatch = match(folder.notes);

@@ -194,6 +194,12 @@ function getSequencingDependencies(tag: Tag): {
 }
 
 // ---------------------------------------------------------------------------
+// Data Collection Tag Types
+// ---------------------------------------------------------------------------
+
+const DATA_COLLECTION_TYPES = ["gaawe", "googtag", "awct", "ua", "html", "img"];
+
+// ---------------------------------------------------------------------------
 // Issue Classification
 // ---------------------------------------------------------------------------
 
@@ -513,8 +519,6 @@ function analyzeConsentSetup(store: ContainerStore): {
 // ---------------------------------------------------------------------------
 // Tool: gtm_get_tag_lifecycle
 // ---------------------------------------------------------------------------
-
-const DATA_COLLECTION_TYPES = ["gaawe", "googtag", "awct", "ua", "html", "img"];
 
 function getTagLifecyclePhase(tag: Tag, _store: ContainerStore): string {
   if (isConsentManagementTag(tag)) return "consent_management";
