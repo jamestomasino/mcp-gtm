@@ -491,11 +491,15 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
   const lifecyclePhase = getTagLifecyclePhase(tag, store);
 
   // Check: data collection tag with no blocking trigger in a consent-enabled container
+  // Skip if the tag already has built-in consent gating (consentStatus !== "NOT_NEEDED")
+  const tagHasConsentGating = tag.consentSettings?.consentStatus &&
+    tag.consentSettings.consentStatus !== "NOT_NEEDED";
+
   const hasConsentSetup = store.tags.some(isConsentManagementTag) ||
     store.triggers.some((t) => isLikelyConsentBlockingTrigger(t, store)) ||
     store.variables.some(isConsentVariable);
 
-  if (lifecyclePhase === "data_collection" && hasConsentSetup && blockingTriggers.length === 0) {
+  if (lifecyclePhase === "data_collection" && hasConsentSetup && blockingTriggers.length === 0 && !tagHasConsentGating) {
     issues.push({
       severity: "critical",
       category: "unprotected_data_collection",
@@ -587,10 +591,11 @@ function getTagLifecycle(tag: Tag, store: ContainerStore): {
       }),
       fires_before: firesBefore,
     },
-    consent_related: isConsentManagementTag(tag) || blockingTriggers.some((bt) => {
+    consent_related: isConsentManagementTag(tag) || tagHasConsentGating || blockingTriggers.some((bt) => {
       const trig = store.triggers.find((t) => t.triggerId === bt.id);
       return trig && isLikelyConsentBlockingTrigger(trig, store);
     }),
+    consent_settings: tag.consentSettings ?? null,
     issues,
   };
 }

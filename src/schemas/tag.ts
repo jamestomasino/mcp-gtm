@@ -23,6 +23,11 @@ export const TagSchema = z.object({
   notes: z.string().optional(),
   parentContainerId: z.string().optional(),
   schedule: z.array(z.any()).optional(),
+  consentSettings: z.object({
+    consentStatus: z.string().optional(), // "NOT_NEEDED", "NEEDED", "DENIED", "GRANTED"
+    consentMode: z.string().optional(),   // "V2"
+    consentType: z.any().optional(),      // list of consent types (e.g. ["analytics_storage"])
+  }).optional(),
 }).passthrough();
 
 export type Tag = z.infer<typeof TagSchema>;
