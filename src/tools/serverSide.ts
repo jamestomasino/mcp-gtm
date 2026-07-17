@@ -111,7 +111,10 @@ export function registerServerSideTools(store: ContainerStore) {
           type: t.type,
           notes: t.notes ?? null
         }));
-        return textResult({ transformations, total_count: transformations.length });
+        return textResult({
+          transformations,
+          total_count: transformations.length
+        });
       }
     },
     {
@@ -165,7 +168,10 @@ export function registerServerSideTools(store: ContainerStore) {
           type: t.type,
           notes: t.notes ?? null
         }));
-        return textResult({ custom_templates: templates, total_count: templates.length });
+        return textResult({
+          custom_templates: templates,
+          total_count: templates.length
+        });
       }
     },
     {

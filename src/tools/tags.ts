@@ -2,8 +2,8 @@ import { z } from "zod";
 import type { Tag } from "../schemas/tag";
 import type { ContainerStore } from "../store";
 import { resolveFolderName, resolveTriggerNames } from "../utils/entity";
-import { getTagTypeName } from "../utils/typeCodes";
 import { textResult } from "../utils/response";
+import { getTagTypeName } from "../utils/typeCodes";
 
 /** Tag tools (CRUD + search) */
 export function registerTagTools(store: ContainerStore) {
@@ -53,10 +53,7 @@ export function registerTagTools(store: ContainerStore) {
         return textResult({
           ...tag,
           type_name: getTagTypeName(tag.type),
-          folder_name: resolveFolderName(
-            tag.parentFolderId,
-            store.folders
-          ),
+          folder_name: resolveFolderName(tag.parentFolderId, store.folders),
           firing_trigger_names: resolveTriggerNames(
             tag.firingTriggerId ?? [],
             store.triggers

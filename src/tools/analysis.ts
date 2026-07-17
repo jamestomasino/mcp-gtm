@@ -1,12 +1,12 @@
 import { z } from "zod";
 import type { ContainerStore } from "../store";
 import { resolveTriggerNames } from "../utils/entity";
+import { textResult } from "../utils/response";
 import {
   getTagTypeName,
   getTriggerTypeName,
   getVariableTypeName
 } from "../utils/typeCodes";
-import { textResult } from "../utils/response";
 
 /**
  * Extract all {{variable}} references from a parameter list.
@@ -129,12 +129,10 @@ export function registerAnalysisTools(store: ContainerStore) {
             trigger_id: id,
             trigger_name: resolveTriggerNames([id], store.triggers)[0]
           })),
-          blocking_triggers: (tag.blockingTriggerId ?? []).map(
-            (id) => ({
-              trigger_id: id,
-              trigger_name: resolveTriggerNames([id], store.triggers)[0]
-            })
-          )
+          blocking_triggers: (tag.blockingTriggerId ?? []).map((id) => ({
+            trigger_id: id,
+            trigger_name: resolveTriggerNames([id], store.triggers)[0]
+          }))
         });
       }
     },

@@ -2,8 +2,8 @@ import { z } from "zod";
 import type { Trigger } from "../schemas/trigger";
 import type { ContainerStore } from "../store";
 import { resolveFolderName } from "../utils/entity";
-import { getTriggerTypeName } from "../utils/typeCodes";
 import { textResult } from "../utils/response";
+import { getTriggerTypeName } from "../utils/typeCodes";
 
 /** Trigger tools (CRUD) */
 export function registerTriggerTools(store: ContainerStore) {
@@ -58,10 +58,7 @@ export function registerTriggerTools(store: ContainerStore) {
         return textResult({
           ...trigger,
           type_name: getTriggerTypeName(trigger.type),
-          folder_name: resolveFolderName(
-            trigger.parentFolderId,
-            store.folders
-          )
+          folder_name: resolveFolderName(trigger.parentFolderId, store.folders)
         });
       }
     },

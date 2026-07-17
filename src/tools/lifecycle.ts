@@ -2,9 +2,9 @@ import { z } from "zod";
 import type { Tag, Trigger, Variable } from "../schemas/index";
 import type { ContainerStore } from "../store";
 import { resolveTriggerName } from "../utils/entity";
-import { getTagTypeName } from "../utils/typeCodes";
-import { textResult } from "../utils/response";
 import { ContainerNotLoadedError } from "../utils/errors";
+import { textResult } from "../utils/response";
+import { getTagTypeName } from "../utils/typeCodes";
 
 // ---------------------------------------------------------------------------
 // GTM Tag Firing Order Constants

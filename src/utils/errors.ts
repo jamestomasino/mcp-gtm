@@ -19,7 +19,8 @@ export const ErrorCategories = {
   INTERNAL: "internal"
 } as const;
 
-export type ErrorCategory = (typeof ErrorCategories)[keyof typeof ErrorCategories];
+export type ErrorCategory =
+  (typeof ErrorCategories)[keyof typeof ErrorCategories];
 
 // ---------------------------------------------------------------------------
 // Custom error classes — replace fragile string-matching categorization
