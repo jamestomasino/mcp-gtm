@@ -25,7 +25,7 @@ Or configure in your MCP client:
 }
 ```
 
-## Tools (41 total)
+## Tools (44 total)
 
 | Tool | Description |
 |------|-------------|
@@ -60,6 +60,9 @@ Or configure in your MCP client:
 | `gtm_validate_container` | Run full Zod validation |
 | `gtm_export_container` | Export container state to JSON |
 | `gtm_diff_containers` | Compare two container files |
+| `gtm_analyze_tag_firing_order` | Deterministic firing order, sequencing deps, conflicts |
+| `gtm_analyze_consent_setup` | Consent pattern detection, issue classification, recommendations |
+| `gtm_get_tag_lifecycle` | Per-tag lifecycle phase, consent relationships, issues |
 
 ## Resources (4 total)
 
@@ -82,6 +85,7 @@ Pre-built prompt templates for common workflows:
 | `audit_container` | Find unused/orphaned/disabled entities |
 | `debug_tag` | Debug why a specific tag isn't firing |
 | `compare_containers` | Compare two container files |
+| `audit_consent` | Audit consent setup, firing order, and tag lifecycle |
 
 ## Why JSON Files?
 

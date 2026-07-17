@@ -13,10 +13,12 @@ import { registerFolderTools } from "../src/tools/folders";
 import { registerAnalysisTools } from "../src/tools/analysis";
 import { registerExportTools } from "../src/tools/export";
 import { registerServerSideTools } from "../src/tools/serverSide";
+import { registerLifecycleTools } from "../src/tools/lifecycle";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = join(__dirname, "fixtures");
 const SIMPLE_FIXTURE = join(FIXTURES_DIR, "simple.json");
+const CONSENT_FIXTURE = join(FIXTURES_DIR, "consent.json");
 
 /**
  * Creates a fresh MCP server wired to a ContainerStore (not auto-loaded).
@@ -34,6 +36,7 @@ function createServer(store: ContainerStore) {
     ...registerAnalysisTools(store),
     ...registerExportTools(store),
     ...registerServerSideTools(store),
+    ...registerLifecycleTools(store),
   ];
 
   for (const tool of allTools) {
@@ -80,7 +83,7 @@ describe("MCP protocol integration", () => {
       try {
         const tools = await client.listTools();
         const toolNames = tools.tools.map((t) => t.name);
-        expect(toolNames.length).toBe(41);
+        expect(toolNames.length).toBe(44);
         expect(toolNames).toContain("gtm_load_container");
         expect(toolNames).toContain("gtm_list_tags");
         expect(toolNames).toContain("gtm_create_tag");
@@ -102,6 +105,10 @@ describe("MCP protocol integration", () => {
         expect(toolNames).toContain("gtm_validate_container");
         expect(toolNames).toContain("gtm_export_container");
         expect(toolNames).toContain("gtm_diff_containers");
+        // Lifecycle tools
+        expect(toolNames).toContain("gtm_analyze_tag_firing_order");
+        expect(toolNames).toContain("gtm_analyze_consent_setup");
+        expect(toolNames).toContain("gtm_get_tag_lifecycle");
       } finally {
         await clientTransport.close();
         await serverTransport.close();
@@ -268,9 +275,57 @@ describe("MCP protocol integration", () => {
         expect(promptNames).toContain("audit_container");
         expect(promptNames).toContain("debug_tag");
         expect(promptNames).toContain("compare_containers");
+        expect(promptNames).toContain("audit_consent");
       } catch {
         // listPrompts may not be supported in all SDK versions; skip gracefully
         expect(true).toBe(true);
+      } finally {
+        await clientTransport.close();
+        await serverTransport.close();
+      }
+    });
+  });
+
+  describe("lifecycle analysis via MCP protocol", () => {
+    it("should analyze consent setup end-to-end", async () => {
+      const store = new ContainerStore();
+      const { client, clientTransport, serverTransport } = await connectClient(store);
+      try {
+        // Load consent fixture
+        await client.callTool({
+          name: "gtm_load_container",
+          arguments: { file_path: CONSENT_FIXTURE },
+        });
+
+        // Analyze consent setup
+        const consentResult = await client.callTool({
+          name: "gtm_analyze_consent_setup",
+          arguments: {},
+        });
+        const consentData = JSON.parse(consentResult.content[0].text);
+        expect(consentData.consent_detected).toBe(true);
+        expect(consentData.consent_patterns.length).toBeGreaterThan(0);
+        expect(consentData.issues.length).toBeGreaterThan(0);
+        expect(consentData.recommendation_summary.length).toBeGreaterThan(0);
+
+        // Analyze firing order
+        const orderResult = await client.callTool({
+          name: "gtm_analyze_tag_firing_order",
+          arguments: {},
+        });
+        const orderData = JSON.parse(orderResult.content[0].text);
+        expect(orderData.firing_order.length).toBeGreaterThan(0);
+        expect(orderData.groups).toBeDefined();
+
+        // Get per-tag lifecycle
+        const lifecycleResult = await client.callTool({
+          name: "gtm_get_tag_lifecycle",
+          arguments: { tag_id: "2" },
+        });
+        const lifecycleData = JSON.parse(lifecycleResult.content[0].text);
+        expect(lifecycleData.lifecycle_phase).toBe("data_collection");
+        expect(lifecycleData.firing_order).toBeDefined();
+        expect(lifecycleData.triggers).toBeDefined();
       } finally {
         await clientTransport.close();
         await serverTransport.close();

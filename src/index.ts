@@ -246,6 +246,23 @@ server.prompt(
   }
 );
 
+server.prompt(
+  "audit_consent",
+  "Audit consent setup, tag firing order, and tag lifecycle for compliance issues",
+  {},
+  async () => {
+    return {
+      messages: [{
+        role: "user",
+        content: {
+          type: "text",
+          text: "Please audit the GTM container for consent mode compliance. Analyze the tag firing order, check consent management setup (consent tags, variables, blocking triggers), identify unprotected data collection tags, and report any timing or lifecycle issues. Provide specific recommendations for fixing any problems found.",
+        },
+      }],
+    };
+  }
+);
+
 // Auto-load container from environment variable if provided
 const envContainerFile = process.env.GTM_CONTAINER_FILE;
 if (envContainerFile) {
