@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { GtmExportSchema } from "../schemas/export";
 import type { ContainerStore } from "../store";
+import { textResult } from "../utils/response";
 
 /** Export and diff tools */
 export function registerExportTools(store: ContainerStore) {
@@ -17,22 +18,11 @@ export function registerExportTools(store: ContainerStore) {
       }),
       handler: async ({ file_path }: { file_path: string }) => {
         store.exportTo(file_path);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  status: "exported",
-                  file_path,
-                  counts: store.state
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          status: "exported",
+          file_path,
+          counts: store.state
+        });
       }
     },
     {
@@ -94,7 +84,7 @@ export function registerExportTools(store: ContainerStore) {
           ])
         );
 
-        const diff = {
+        return textResult({
           tags: {
             added: [...tagsB.keys()]
               .filter((id) => !tagsA.has(id))
@@ -125,13 +115,7 @@ export function registerExportTools(store: ContainerStore) {
             count_a: varsA.size,
             count_b: varsB.size
           }
-        };
-
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(diff, null, 2) }
-          ]
-        };
+        });
       }
     }
   ];

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ContainerStore } from "../store";
+import { textResult } from "../utils/response";
 
 /** Folder tools (CRUD) */
 export function registerFolderTools(store: ContainerStore) {
@@ -17,18 +18,7 @@ export function registerFolderTools(store: ContainerStore) {
           tag_count: (folder.tagId ?? []).length,
           notes: folder.notes ?? null
         }));
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                { folders, total_count: folders.length },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({ folders, total_count: folders.length });
       }
     },
     {
@@ -60,11 +50,7 @@ export function registerFolderTools(store: ContainerStore) {
             `Folder not found. Provided: folder_id=${folder_id ?? "none"}, name=${name ?? "none"}`
           );
         }
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(folder, null, 2) }
-          ]
-        };
+        return textResult(folder);
       }
     },
     {
@@ -76,14 +62,7 @@ export function registerFolderTools(store: ContainerStore) {
       }),
       handler: async ({ name, notes }: { name: string; notes?: string }) => {
         const folder = store.createFolder(name, notes);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({ status: "created", folder }, null, 2)
-            }
-          ]
-        };
+        return textResult({ status: "created", folder });
       }
     },
     {
@@ -95,14 +74,7 @@ export function registerFolderTools(store: ContainerStore) {
       handler: async ({ folder_id }: { folder_id: string }) => {
         const deleted = store.deleteFolder(folder_id);
         if (!deleted) throw new Error(`Folder not found: ${folder_id}`);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({ status: "deleted", folder_id }, null, 2)
-            }
-          ]
-        };
+        return textResult({ status: "deleted", folder_id });
       }
     },
     {
@@ -125,18 +97,7 @@ export function registerFolderTools(store: ContainerStore) {
       }) => {
         const moved = store.moveTagToFolder(tag_id, folder_id);
         if (!moved) throw new Error(`Tag not found: ${tag_id}`);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                { status: "moved", tag_id, folder_id },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({ status: "moved", tag_id, folder_id });
       }
     },
     {
@@ -159,18 +120,7 @@ export function registerFolderTools(store: ContainerStore) {
       }) => {
         const moved = store.moveTriggerToFolder(trigger_id, folder_id);
         if (!moved) throw new Error(`Trigger not found: ${trigger_id}`);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                { status: "moved", trigger_id, folder_id },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({ status: "moved", trigger_id, folder_id });
       }
     },
     {
@@ -193,18 +143,7 @@ export function registerFolderTools(store: ContainerStore) {
       }) => {
         const moved = store.moveVariableToFolder(variable_id, folder_id);
         if (!moved) throw new Error(`Variable not found: ${variable_id}`);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                { status: "moved", variable_id, folder_id },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({ status: "moved", variable_id, folder_id });
       }
     }
   ];

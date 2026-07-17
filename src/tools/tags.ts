@@ -3,6 +3,7 @@ import type { Tag } from "../schemas/tag";
 import type { ContainerStore } from "../store";
 import { resolveFolderName, resolveTriggerNames } from "../utils/entity";
 import { getTagTypeName } from "../utils/typeCodes";
+import { textResult } from "../utils/response";
 
 /** Tag tools (CRUD + search) */
 export function registerTagTools(store: ContainerStore) {
@@ -23,14 +24,7 @@ export function registerTagTools(store: ContainerStore) {
           folder_name: resolveFolderName(tag.parentFolderId, store.folders),
           notes: tag.notes ?? null
         }));
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({ tags, total_count: tags.length }, null, 2)
-            }
-          ]
-        };
+        return textResult({ tags, total_count: tags.length });
       }
     },
     {
@@ -56,33 +50,22 @@ export function registerTagTools(store: ContainerStore) {
             `Tag not found. Provided: tag_id=${tag_id ?? "none"}, name=${name ?? "none"}`
           );
         }
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  ...tag,
-                  type_name: getTagTypeName(tag.type),
-                  folder_name: resolveFolderName(
-                    tag.parentFolderId,
-                    store.folders
-                  ),
-                  firing_trigger_names: resolveTriggerNames(
-                    tag.firingTriggerId ?? [],
-                    store.triggers
-                  ),
-                  blocking_trigger_names: resolveTriggerNames(
-                    tag.blockingTriggerId ?? [],
-                    store.triggers
-                  )
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          ...tag,
+          type_name: getTagTypeName(tag.type),
+          folder_name: resolveFolderName(
+            tag.parentFolderId,
+            store.folders
+          ),
+          firing_trigger_names: resolveTriggerNames(
+            tag.firingTriggerId ?? [],
+            store.triggers
+          ),
+          blocking_trigger_names: resolveTriggerNames(
+            tag.blockingTriggerId ?? [],
+            store.triggers
+          )
+        });
       }
     },
     {
@@ -111,22 +94,11 @@ export function registerTagTools(store: ContainerStore) {
           notes: params.notes,
           enabled: params.enabled !== false
         });
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  status: "created",
-                  tag,
-                  type_name: getTagTypeName(tag.type)
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          status: "created",
+          tag,
+          type_name: getTagTypeName(tag.type)
+        });
       }
     },
     {
@@ -156,14 +128,7 @@ export function registerTagTools(store: ContainerStore) {
         if (updates.enabled !== undefined)
           updatesObj.enabled = updates.enabled as boolean;
         const tag = store.updateTag(tag_id, updatesObj as Partial<Tag>);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({ status: "updated", tag }, null, 2)
-            }
-          ]
-        };
+        return textResult({ status: "updated", tag });
       }
     },
     {
@@ -175,14 +140,7 @@ export function registerTagTools(store: ContainerStore) {
       handler: async ({ tag_id }: { tag_id: string }) => {
         const deleted = store.deleteTag(tag_id);
         if (!deleted) throw new Error(`Tag not found: ${tag_id}`);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({ status: "deleted", tag_id }, null, 2)
-            }
-          ]
-        };
+        return textResult({ status: "deleted", tag_id });
       }
     },
     {
@@ -202,23 +160,12 @@ export function registerTagTools(store: ContainerStore) {
             type_name: getTagTypeName(t.type),
             enabled: t.enabled !== false
           }));
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  type,
-                  type_name: getTagTypeName(type),
-                  tags: matched,
-                  total_count: matched.length
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          type,
+          type_name: getTagTypeName(type),
+          tags: matched,
+          total_count: matched.length
+        });
       }
     }
   ];

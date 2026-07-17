@@ -3,17 +3,25 @@
   "version": "0.1.0",
   "description": "MCP server for Google Tag Manager container JSON files. Zero auth, fully offline.",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "mcp-gtm": "dist/index.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jamestomasino/mcp-gtm"
+    "url": "https://github.com/1jehuang/mcp-gtm"
   },
-  "homepage": "https://github.com/jamestomasino/mcp-gtm#readme",
+  "homepage": "https://github.com/1jehuang/mcp-gtm#readme",
   "bugs": {
-    "url": "https://github.com/jamestomasino/mcp-gtm/issues"
+    "url": "https://github.com/1jehuang/mcp-gtm/issues"
   },
   "author": "Jcode",
   "engines": {
@@ -58,9 +66,5 @@
     "src/",
     "!dist/**/*.map",
     "biome.json"
-  ],
-  "allowScripts": {
-    "esbuild@0.28.1": true,
-    "esbuild@0.21.5": true
-  }
+  ]
 }

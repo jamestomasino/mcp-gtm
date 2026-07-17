@@ -3,7 +3,6 @@ import { ParameterListSchema } from "./parameter";
 
 /**
  * VariableSchema — represents a user-defined GTM variable.
- * Adapted from stape-io Zod schemas for the export JSON shape.
  */
 export const VariableSchema = z
   .object({

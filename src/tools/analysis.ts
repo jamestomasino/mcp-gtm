@@ -6,6 +6,7 @@ import {
   getTriggerTypeName,
   getVariableTypeName
 } from "../utils/typeCodes";
+import { textResult } from "../utils/response";
 
 /**
  * Extract all {{variable}} references from a parameter list.
@@ -15,7 +16,6 @@ function extractVariableReferences(value: unknown): string[] {
   const refs = new Set<string>();
   function walk(v: unknown) {
     if (typeof v === "string") {
-      // Match {{var_name}} patterns
       const matches = v.match(/\{\{([^}]+)\}\}/g);
       if (matches) {
         for (const m of matches) {
@@ -38,13 +38,11 @@ function extractVariableReferences(value: unknown): string[] {
 function collectReferencedVariableNames(store: ContainerStore): Set<string> {
   const referenced = new Set<string>();
 
-  // From tags: parameter list
   for (const tag of store.tags) {
     if (Array.isArray(tag.parameter)) {
       for (const param of tag.parameter) {
         const refs = extractVariableReferences(param.value);
         refs.forEach((r) => referenced.add(r));
-        // Also check nested 'list' fields
         if (Array.isArray(param.list)) {
           for (const item of param.list) {
             const itemRefs = extractVariableReferences(item);
@@ -55,11 +53,10 @@ function collectReferencedVariableNames(store: ContainerStore): Set<string> {
     }
   }
 
-  // From triggers: filter and parameter lists
   for (const trigger of store.triggers) {
     if (Array.isArray(trigger.filter)) {
       for (const filt of trigger.filter) {
-        if (Array.isArray(filt.parameter)) {
+        if (Array.isArray(filt?.parameter)) {
           for (const param of filt.parameter) {
             const refs = extractVariableReferences(param.value);
             refs.forEach((r) => referenced.add(r));
@@ -81,7 +78,6 @@ function collectReferencedVariableNames(store: ContainerStore): Set<string> {
     }
   }
 
-  // From user-defined variables: they can reference other variables (lookup tables, regEx tables, custom JS)
   for (const variable of store.variables) {
     if (Array.isArray(variable.parameter)) {
       for (const param of variable.parameter) {
@@ -126,34 +122,20 @@ export function registerAnalysisTools(store: ContainerStore) {
             `Tag not found. Provided: tag_id=${tag_id ?? "none"}, name=${name ?? "none"}`
           );
         }
-
-        // Find which tags reference this trigger (reverse dependency)
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  tag_id: tag.tagId,
-                  tag_name: tag.name,
-                  firing_triggers: (tag.firingTriggerId ?? []).map((id) => ({
-                    trigger_id: id,
-                    trigger_name: resolveTriggerNames([id], store.triggers)[0]
-                  })),
-                  blocking_triggers: (tag.blockingTriggerId ?? []).map(
-                    (id) => ({
-                      trigger_id: id,
-                      trigger_name: resolveTriggerNames([id], store.triggers)[0]
-                    })
-                  )
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          tag_id: tag.tagId,
+          tag_name: tag.name,
+          firing_triggers: (tag.firingTriggerId ?? []).map((id) => ({
+            trigger_id: id,
+            trigger_name: resolveTriggerNames([id], store.triggers)[0]
+          })),
+          blocking_triggers: (tag.blockingTriggerId ?? []).map(
+            (id) => ({
+              trigger_id: id,
+              trigger_name: resolveTriggerNames([id], store.triggers)[0]
+            })
+          )
+        });
       }
     },
     {
@@ -174,7 +156,6 @@ export function registerAnalysisTools(store: ContainerStore) {
         > = {};
 
         if (entity_type === "triggers" || entity_type === "all") {
-          // A trigger is unused if no tag fires on it (firing or blocking)
           const usedTriggerIds = new Set<string>();
           store.tags.forEach((tag) => {
             (tag.firingTriggerId ?? []).forEach((id) => usedTriggerIds.add(id));
@@ -193,7 +174,6 @@ export function registerAnalysisTools(store: ContainerStore) {
         }
 
         if (entity_type === "variables" || entity_type === "all") {
-          // Trace variable references through all parameters in tags, triggers, and other variables
           const referencedNames = collectReferencedVariableNames(store);
           result.variables = store.variables
             .filter((v) => !referencedNames.has(v.name))
@@ -206,7 +186,6 @@ export function registerAnalysisTools(store: ContainerStore) {
         }
 
         if (entity_type === "tags" || entity_type === "all") {
-          // Tags are "unused" if they're disabled
           result.tags = store.tags
             .filter((t) => !t.enabled)
             .map((t) => ({
@@ -217,11 +196,7 @@ export function registerAnalysisTools(store: ContainerStore) {
             }));
         }
 
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) }
-          ]
-        };
+        return textResult(result);
       }
     },
     {
@@ -241,21 +216,10 @@ export function registerAnalysisTools(store: ContainerStore) {
             name: t.name,
             type: t.type
           }));
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  orphaned_triggers: orphaned,
-                  total_count: orphaned.length
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          orphaned_triggers: orphaned,
+          total_count: orphaned.length
+        });
       }
     },
     {
@@ -265,22 +229,11 @@ export function registerAnalysisTools(store: ContainerStore) {
       parameters: z.object({}),
       handler: async () => {
         const issues = store.validate();
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  valid: issues.length === 0,
-                  issue_count: issues.length,
-                  issues
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          valid: issues.length === 0,
+          issue_count: issues.length,
+          issues
+        });
       }
     }
   ];

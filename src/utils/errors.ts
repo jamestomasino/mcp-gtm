@@ -2,7 +2,7 @@
  * Error categories for structured error responses.
  * Allow LLM clients to distinguish error types programmatically.
  */
-export const ErrorCategory = {
+export const ErrorCategories = {
   /** No container loaded or already unloaded */
   NOT_LOADED: "not_loaded",
   /** Entity not found (tag, trigger, variable, folder) */
@@ -19,47 +19,87 @@ export const ErrorCategory = {
   INTERNAL: "internal"
 } as const;
 
-export type ErrorCategory = (typeof ErrorCategory)[keyof typeof ErrorCategory];
+export type ErrorCategory = (typeof ErrorCategories)[keyof typeof ErrorCategories];
+
+// ---------------------------------------------------------------------------
+// Custom error classes — replace fragile string-matching categorization
+// ---------------------------------------------------------------------------
+
+export class GtmError extends Error {
+  public readonly category: ErrorCategory;
+
+  constructor(message: string, category: ErrorCategory) {
+    super(message);
+    this.category = category;
+  }
+}
+
+export class ContainerNotLoadedError extends GtmError {
+  constructor(message = "No container loaded. Call gtm_load_container first.") {
+    super(message, ErrorCategories.NOT_LOADED);
+  }
+}
+
+export class EntityNotFoundError extends GtmError {
+  constructor(message: string) {
+    super(message, ErrorCategories.NOT_FOUND);
+  }
+}
+
+export class ValidationError extends GtmError {
+  constructor(message: string) {
+    super(message, ErrorCategories.VALIDATION);
+  }
+}
+
+export class IoError extends GtmError {
+  constructor(message: string) {
+    super(message, ErrorCategories.IO);
+  }
+}
+
+export class DisabledError extends GtmError {
+  constructor(message: string) {
+    super(message, ErrorCategories.DISABLED);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Legacy categorizeError for backward compatibility
+// ---------------------------------------------------------------------------
 
 /**
- * Categorize an error message into a structured error category.
+ * Categorize an error into a structured error category.
+ * Handles GtmError subclasses directly, falls back to string matching for plain Errors.
  */
 export function categorizeError(error: unknown): {
   category: ErrorCategory;
   message: string;
 } {
+  if (error instanceof GtmError) {
+    return { category: error.category, message: error.message };
+  }
+
   const message = error instanceof Error ? error.message : String(error);
 
+  // Fallback: string matching for errors thrown outside our control
   if (message.includes("No container loaded")) {
-    return { category: ErrorCategory.NOT_LOADED, message };
+    return { category: ErrorCategories.NOT_LOADED, message };
   }
-  if (
-    message.includes("not found") ||
-    message.includes("Tag not found") ||
-    message.includes("Trigger not found") ||
-    message.includes("Variable not found") ||
-    message.includes("Folder not found") ||
-    message.includes("Zone not found") ||
-    message.includes("Client not found") ||
-    message.includes("Transformation not found") ||
-    message.includes("Custom template not found")
-  ) {
-    return { category: ErrorCategory.NOT_FOUND, message };
+  if (message.includes("not found")) {
+    return { category: ErrorCategories.NOT_FOUND, message };
   }
   if (message.startsWith("Invalid ")) {
-    return { category: ErrorCategory.VALIDATION, message };
+    return { category: ErrorCategories.VALIDATION, message };
   }
   if (message.includes("ENOENT") || message.includes("EACCES")) {
-    return { category: ErrorCategory.IO, message };
+    return { category: ErrorCategories.IO, message };
   }
   if (message.includes("read-only") || message.includes("disabled")) {
-    return { category: ErrorCategory.DISABLED, message };
-  }
-  if (message.includes("Invalid parameter")) {
-    return { category: ErrorCategory.INVALID_INPUT, message };
+    return { category: ErrorCategories.DISABLED, message };
   }
 
-  return { category: ErrorCategory.INTERNAL, message };
+  return { category: ErrorCategories.INTERNAL, message };
 }
 
 /**

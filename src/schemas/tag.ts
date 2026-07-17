@@ -3,7 +3,6 @@ import { ParameterListSchema } from "./parameter";
 
 /**
  * TagSchema — represents a GTM tag.
- * Adapted from stape-io Zod schemas for the export JSON shape.
  */
 export const TagSchema = z
   .object({

@@ -3,6 +3,8 @@ import type { Tag, Trigger, Variable } from "../schemas/index";
 import type { ContainerStore } from "../store";
 import { resolveTriggerName } from "../utils/entity";
 import { getTagTypeName } from "../utils/typeCodes";
+import { textResult } from "../utils/response";
+import { ContainerNotLoadedError } from "../utils/errors";
 
 // ---------------------------------------------------------------------------
 // GTM Tag Firing Order Constants
@@ -57,20 +59,6 @@ function getFiringGroup(tag: Tag): { group: string; priority: number } {
 // Consent Mode Detection Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Consent Mode v2 requires these consent types to be managed:
- * - ad_storage (advertising cookies)
- * - analytics_storage (analytics cookies)
- * - functionality_storage
- * - personalization_storage
- * - security_storage (always granted, cannot be denied)
- *
- * Detection heuristics:
- * 1. Look for tags that call consent.update() or set consent state
- * 2. Look for variables referencing consent state (e.g., {{consent_status}}, {{cm_consent}})
- * 3. Look for blocking triggers that reference consent variables
- * 4. Look for consent initialization patterns (timer triggers, custom events for consent)
- */
 const CONSENT_KEYWORDS = [
   "consent",
   "gdpr",
@@ -92,14 +80,12 @@ const CONSENT_KEYWORDS = [
   "data_layer_version"
 ];
 
-/** Check if a string contains consent-related keywords (case-insensitive) */
 function containsConsentKeyword(value: unknown): boolean {
   if (typeof value !== "string") return false;
   const lower = value.toLowerCase();
   return CONSENT_KEYWORDS.some((kw) => lower.includes(kw.toLowerCase()));
 }
 
-/** Recursively check all parameter values for consent keywords */
 function hasConsentReferences(params: unknown[]): boolean {
   function walk(v: unknown): boolean {
     if (typeof v === "string") return containsConsentKeyword(v);
@@ -110,19 +96,12 @@ function hasConsentReferences(params: unknown[]): boolean {
   return params.some(walk);
 }
 
-/**
- * Detect if a trigger appears to be a consent-blocking trigger.
- * Heuristic: trigger name or filter references consent variables,
- * or trigger is used as a blocking trigger on data-collection tags.
- */
 function isLikelyConsentBlockingTrigger(
   trigger: Trigger,
   store: ContainerStore
 ): boolean {
-  // Check trigger name for consent keywords
   if (containsConsentKeyword(trigger.name)) return true;
 
-  // Check filter conditions for consent variable references
   if (Array.isArray(trigger.filter)) {
     for (const filt of trigger.filter) {
       if (Array.isArray(filt?.parameter)) {
@@ -131,7 +110,6 @@ function isLikelyConsentBlockingTrigger(
     }
   }
 
-  // Check if used as blocking trigger on data-collection tags
   const dataCollectionTypes = ["gaawe", "googtag", "awct", "ua", "html", "img"];
   for (const tag of store.tags) {
     if (
@@ -145,10 +123,6 @@ function isLikelyConsentBlockingTrigger(
   return false;
 }
 
-/**
- * Detect if a tag appears to be a consent management tag.
- * Heuristic: tag parameters or name reference consent APIs.
- */
 function isConsentManagementTag(tag: Tag): boolean {
   if (containsConsentKeyword(tag.name)) return true;
   if (Array.isArray(tag.parameter) && hasConsentReferences(tag.parameter))
@@ -156,9 +130,6 @@ function isConsentManagementTag(tag: Tag): boolean {
   return false;
 }
 
-/**
- * Check if a variable appears to track consent state.
- */
 function isConsentVariable(variable: Variable): boolean {
   if (containsConsentKeyword(variable.name)) return true;
   if (
@@ -169,10 +140,6 @@ function isConsentVariable(variable: Variable): boolean {
   return false;
 }
 
-/**
- * Extract sequencing dependencies from tag parameters.
- * Tags can specify "tagsToOverride" (fires after) via parameter key "tagsToOverride".
- */
 function getSequencingDependencies(tag: Tag): {
   firesAfter: string[];
   firesBefore: string[];
@@ -188,8 +155,6 @@ function getSequencingDependencies(tag: Tag): {
       }
     }
   }
-  // firesBefore is the inverse: tags that list this tag in their tagsToOverride
-  // (computed at container level, not here)
   return { firesAfter, firesBefore: [] };
 }
 
@@ -219,7 +184,6 @@ export interface LifecycleIssue {
 function analyzeTagFiringOrder(store: ContainerStore) {
   const tags = store.tags.filter((t) => t.enabled !== false);
 
-  // Build inverse map: which tags fire before a given tag (via tagsToOverride)
   const firesBeforeMap = new Map<string, string[]>();
   for (const tag of store.tags) {
     const deps = getSequencingDependencies(tag);
@@ -229,7 +193,6 @@ function analyzeTagFiringOrder(store: ContainerStore) {
     }
   }
 
-  // Sort tags by firing group priority, then by tagId within group
   const sorted = [...tags].sort((a, b) => {
     const aGroup = getFiringGroup(a);
     const bGroup = getFiringGroup(b);
@@ -238,8 +201,6 @@ function analyzeTagFiringOrder(store: ContainerStore) {
     return Number(a.tagId) - Number(b.tagId);
   });
 
-  // Detect sequencing conflicts: a tag with higher tagId fires before a tag with
-  // lower tagId due to tagsToOverride, reversing natural order
   const sequencingConflicts: { tag: string; firesAfter: string }[] = [];
   for (const tag of store.tags) {
     const deps = getSequencingDependencies(tag);
@@ -248,17 +209,10 @@ function analyzeTagFiringOrder(store: ContainerStore) {
       if (afterTag) {
         const aGroup = getFiringGroup(tag);
         const bGroup = getFiringGroup(afterTag);
-        // Natural order would put lower tagId first within same group
         if (
-          aGroup.priority === bGroup.priority &&
-          Number(tag.tagId) < Number(afterTag.tagId)
-        ) {
-          // This is fine — lower tagId fires first, and this tag fires after higher tagId
-        } else if (
           aGroup.priority <= bGroup.priority &&
           Number(tag.tagId) > Number(afterTag.tagId)
         ) {
-          // Potential conflict: this tag naturally fires later but must wait for an earlier tag
           sequencingConflicts.push({
             tag: tag.name,
             firesAfter: afterTag.name
@@ -334,7 +288,6 @@ function analyzeConsentSetup(store: ContainerStore): {
   const issues: LifecycleIssue[] = [];
   const consentPatterns: string[] = [];
 
-  // 1. Detect consent management tags
   const consentTags = store.tags.filter(isConsentManagementTag);
   const consentManagementTags = consentTags.map((t) => ({
     tag_id: t.tagId,
@@ -344,7 +297,6 @@ function analyzeConsentSetup(store: ContainerStore): {
       : "tag_parameters"
   }));
 
-  // 2. Detect consent variables
   const consentVars = store.variables.filter(isConsentVariable);
   const consentVariables = consentVars.map((v) => ({
     variable_id: v.variableId,
@@ -352,7 +304,6 @@ function analyzeConsentSetup(store: ContainerStore): {
     type: v.type
   }));
 
-  // 3. Detect consent blocking triggers
   const consentBlockingTriggers = store.triggers
     .filter((trigger) => isLikelyConsentBlockingTrigger(trigger, store))
     .map((t) => ({
@@ -364,13 +315,11 @@ function analyzeConsentSetup(store: ContainerStore): {
       ).length
     }));
 
-  // 4. Determine if consent is detected at all
   const consentDetected =
     consentTags.length > 0 ||
     consentVars.length > 0 ||
     consentBlockingTriggers.length > 0;
 
-  // 5. Detect specific consent patterns
   if (consentTags.length > 0) {
     consentPatterns.push("consent_management_tags");
   }
@@ -381,7 +330,6 @@ function analyzeConsentSetup(store: ContainerStore): {
     consentPatterns.push("consent_blocking_triggers");
   }
 
-  // Check for consent initialization trigger (timer-based or custom event on load)
   for (const trigger of consentBlockingTriggers) {
     const trig = store.triggers.find((t) => t.triggerId === trigger.trigger_id);
     if (trig && (trig.type === "timer" || trig.type === "custom")) {
@@ -390,9 +338,7 @@ function analyzeConsentSetup(store: ContainerStore): {
     }
   }
 
-  // 6. Analyze issues
-
-  // ISSUE: No consent setup at all on a web container
+  // Issues
   const isWebContainer = store.containerInfo.usageContext?.includes(1);
   if (isWebContainer && !consentDetected && store.tags.length > 0) {
     issues.push({
@@ -405,7 +351,6 @@ function analyzeConsentSetup(store: ContainerStore): {
     });
   }
 
-  // ISSUE: Data collection tags without blocking triggers when consent exists
   if (consentDetected) {
     const unprotectedTags = store.tags.filter(
       (tag) =>
@@ -426,14 +371,12 @@ function analyzeConsentSetup(store: ContainerStore): {
     }
   }
 
-  // ISSUE: Consent tags firing on All Pages without consent check
   if (consentDetected) {
     for (const consentTag of consentTags) {
       const firingTriggers = (consentTag.firingTriggerId ?? [])
         .map((id) => store.triggers.find((t) => t.triggerId === id))
         .filter(Boolean) as Trigger[];
 
-      // Check if consent tag fires on "All Pages" type trigger
       const firesOnAllPages = firingTriggers.some(
         (t) => t.type === "pageview" && (!t.filter || t.filter.length === 0)
       );
@@ -448,7 +391,6 @@ function analyzeConsentSetup(store: ContainerStore): {
     }
   }
 
-  // ISSUE: Blocking triggers reference non-existent triggers
   for (const tag of store.tags) {
     for (const blockId of tag.blockingTriggerId ?? []) {
       if (!store.triggers.find((t) => t.triggerId === blockId)) {
@@ -463,7 +405,6 @@ function analyzeConsentSetup(store: ContainerStore): {
     }
   }
 
-  // ISSUE: Consent timing — consent tags should fire before data collection tags
   if (consentTags.length > 0) {
     for (const consentTag of consentTags) {
       const consentGroup = getFiringGroup(consentTag);
@@ -473,7 +414,6 @@ function analyzeConsentSetup(store: ContainerStore): {
           dataTag.tagId !== consentTag.tagId
         ) {
           const dataGroup = getFiringGroup(dataTag);
-          // If consent tag is in a later firing group than data collection tag
           if (consentGroup.priority > dataGroup.priority) {
             issues.push({
               severity: "warning",
@@ -489,7 +429,6 @@ function analyzeConsentSetup(store: ContainerStore): {
     }
   }
 
-  // Build recommendation summary
   let recommendationSummary = "";
   if (!consentDetected) {
     recommendationSummary =
@@ -556,14 +495,12 @@ function getTagLifecycle(
   const issues: LifecycleIssue[] = [];
   const { group, priority } = getFiringGroup(tag);
 
-  // Position within firing group
   const sameGroupTags = store.tags
     .filter((t) => getFiringGroup(t).group === group && t.enabled !== false)
     .sort((a, b) => Number(a.tagId) - Number(b.tagId));
   const positionInGroup =
     sameGroupTags.findIndex((t) => t.tagId === tag.tagId) + 1;
 
-  // Sequencing
   const deps = getSequencingDependencies(tag);
   const firesBefore = store.tags
     .filter((t) => {
@@ -572,7 +509,6 @@ function getTagLifecycle(
     })
     .map((t) => t.name);
 
-  // Resolve trigger names
   const firingTriggers = (tag.firingTriggerId ?? []).map((id) => ({
     id,
     name: resolveTriggerName(id, store.triggers) ?? id
@@ -582,11 +518,8 @@ function getTagLifecycle(
     name: resolveTriggerName(id, store.triggers) ?? id
   }));
 
-  // Per-tag issues
   const lifecyclePhase = getTagLifecyclePhase(tag, store);
 
-  // Check: data collection tag with no blocking trigger in a consent-enabled container
-  // Skip if the tag already has built-in consent gating (consentStatus !== "NOT_NEEDED")
   const tagHasConsentGating =
     tag.consentSettings?.consentStatus &&
     tag.consentSettings.consentStatus !== "NOT_NEEDED";
@@ -610,7 +543,6 @@ function getTagLifecycle(
     });
   }
 
-  // Check: firing trigger references
   for (const ft of firingTriggers) {
     if (!store.triggers.find((t) => t.triggerId === ft.id)) {
       issues.push({
@@ -622,7 +554,6 @@ function getTagLifecycle(
     }
   }
 
-  // Check: blocking trigger references
   for (const bt of blockingTriggers) {
     if (!store.triggers.find((t) => t.triggerId === bt.id)) {
       issues.push({
@@ -634,7 +565,6 @@ function getTagLifecycle(
     }
   }
 
-  // Check: no firing triggers
   if (firingTriggers.length === 0) {
     issues.push({
       severity: "warning",
@@ -645,7 +575,6 @@ function getTagLifecycle(
     });
   }
 
-  // Check: disabled tag
   if (tag.enabled === false) {
     issues.push({
       severity: "info",
@@ -654,7 +583,6 @@ function getTagLifecycle(
     });
   }
 
-  // Check: consent tag firing after data collection
   if (lifecyclePhase === "consent_management") {
     for (const dcTag of store.tags) {
       if (getTagLifecyclePhase(dcTag, store) === "data_collection") {
@@ -719,12 +647,8 @@ export function registerLifecycleTools(store: ContainerStore) {
         "Analyze the deterministic tag firing order for the loaded container. Reports the evaluation sequence (Google tags → Custom HTML → Custom Image → Custom Templates), position within each group, sequencing dependencies (fires after/before), and potential ordering conflicts. Critical for understanding consent timing and tag execution order. Requires a loaded container.",
       parameters: z.object({}),
       handler: async () => {
-        const result = analyzeTagFiringOrder(store);
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) }
-          ]
-        };
+        if (!store.isLoaded) throw new ContainerNotLoadedError();
+        return textResult(analyzeTagFiringOrder(store));
       }
     },
     {
@@ -733,12 +657,8 @@ export function registerLifecycleTools(store: ContainerStore) {
         "Analyze the container's consent management configuration. Detects consent management tags, consent state variables, consent blocking triggers, and consent initialization patterns. Reports issues like unprotected data collection tags, consent timing problems, orphaned blocking references, and missing consent setup. Issues are classified as critical/warning/info with recommendations. Requires a loaded container.",
       parameters: z.object({}),
       handler: async () => {
-        const result = analyzeConsentSetup(store);
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) }
-          ]
-        };
+        if (!store.isLoaded) throw new ContainerNotLoadedError();
+        return textResult(analyzeConsentSetup(store));
       }
     },
     {
@@ -753,6 +673,7 @@ export function registerLifecycleTools(store: ContainerStore) {
           .describe("Tag name to analyze (alternative to tag_id)")
       }),
       handler: async ({ tag_id, name }: { tag_id?: string; name?: string }) => {
+        if (!store.isLoaded) throw new ContainerNotLoadedError();
         let tag: Tag | undefined;
         if (tag_id) {
           tag = store.tags.find((t) => t.tagId === tag_id);
@@ -764,12 +685,7 @@ export function registerLifecycleTools(store: ContainerStore) {
             `Tag not found. Provided: tag_id=${tag_id ?? "none"}, name=${name ?? "none"}`
           );
         }
-        const result = getTagLifecycle(tag, store);
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(result, null, 2) }
-          ]
-        };
+        return textResult(getTagLifecycle(tag, store));
       }
     }
   ];

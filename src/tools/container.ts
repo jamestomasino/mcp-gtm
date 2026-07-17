@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ContainerStore } from "../store";
 import { getUsageContextNames } from "../utils/typeCodes";
+import { textResult } from "../utils/response";
 
 /** Container-level read-only tools */
 export function registerContainerTools(store: ContainerStore) {
@@ -16,23 +17,12 @@ export function registerContainerTools(store: ContainerStore) {
         store.load(file_path);
         const info = store.containerInfo;
         const state = store.state;
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  status: "loaded",
-                  file_path,
-                  container: info,
-                  counts: state
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          status: "loaded",
+          file_path,
+          container: info,
+          counts: state
+        });
       }
     },
     {
@@ -42,21 +32,10 @@ export function registerContainerTools(store: ContainerStore) {
       parameters: z.object({}),
       handler: async () => {
         const info = store.containerInfo;
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  ...info,
-                  usageContextNames: getUsageContextNames(info.usageContext)
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          ...info,
+          usageContextNames: getUsageContextNames(info.usageContext)
+        });
       }
     },
     {
@@ -65,21 +44,10 @@ export function registerContainerTools(store: ContainerStore) {
         "Get summary counts and structure overview of the loaded container.",
       parameters: z.object({}),
       handler: async () => {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  ...store.state,
-                  source_path: store.sourcePath
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          ...store.state,
+          source_path: store.sourcePath
+        });
       }
     }
   ];

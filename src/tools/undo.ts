@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { ContainerStore } from "../store";
+import { textResult } from "../utils/response";
+import { ContainerNotLoadedError } from "../utils/errors";
 
 export function registerUndoTools(store: ContainerStore) {
   return [
@@ -9,27 +11,17 @@ export function registerUndoTools(store: ContainerStore) {
         "Undo the last mutation (create, update, delete, move) made to the container. Returns the previous state summary. Requires a loaded container.",
       parameters: z.object({}),
       handler: async () => {
+        if (!store.isLoaded) throw new ContainerNotLoadedError();
         const success = store.undo();
         if (!success) {
           throw new Error("Nothing to undo. No mutations have been made yet.");
         }
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  undone: true,
-                  current_state: store.state,
-                  undo_steps_remaining: store.undoSteps,
-                  redo_steps_available: store.redoSteps
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          undone: true,
+          current_state: store.state,
+          undo_steps_remaining: store.undoSteps,
+          redo_steps_available: store.redoSteps
+        });
       }
     },
     {
@@ -38,27 +30,17 @@ export function registerUndoTools(store: ContainerStore) {
         "Redo the last undone mutation. Returns the restored state summary. Requires a loaded container.",
       parameters: z.object({}),
       handler: async () => {
+        if (!store.isLoaded) throw new ContainerNotLoadedError();
         const success = store.redo();
         if (!success) {
           throw new Error("Nothing to redo. No undone mutations available.");
         }
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  redone: true,
-                  current_state: store.state,
-                  undo_steps_remaining: store.undoSteps,
-                  redo_steps_available: store.redoSteps
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          redone: true,
+          current_state: store.state,
+          undo_steps_remaining: store.undoSteps,
+          redo_steps_available: store.redoSteps
+        });
       }
     }
   ];

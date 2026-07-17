@@ -537,7 +537,7 @@ LLM → gtm_diff_containers(file_a="staging.json", file_b="prod.json")
 - [x] Lifecycle tools (tag firing order, consent setup analysis, per-tag lifecycle) — 3 tools
 - [x] Read-only mode config flag (`GTM_READ_ONLY` env var)
 
-### Tool Inventory (44 tools, 4 resources, 5 prompts)
+### Tool Inventory (47 tools, 4 resources, 5 prompts)
 
 All tools are implemented and registered in `src/index.ts`. The tool groups are:
 
@@ -552,6 +552,8 @@ All tools are implemented and registered in `src/index.ts`. The tool groups are:
 | Lifecycle | `tools/lifecycle.ts` | analyze_tag_firing_order, analyze_consent_setup, get_tag_lifecycle |
 | Server-Side | `tools/serverSide.ts` | list_zones, get_zone, list_clients, get_client, list_transformations, get_transformation, list_custom_templates, get_custom_template |
 | Export | `tools/export.ts` | export_container, diff_containers |
+| Search | `tools/search.ts` | search |
+| Undo/Redo | `tools/undo.ts` | undo, redo |
 
 ### Where We Left Off
 

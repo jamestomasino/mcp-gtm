@@ -3,6 +3,7 @@ import type { Trigger } from "../schemas/trigger";
 import type { ContainerStore } from "../store";
 import { resolveFolderName } from "../utils/entity";
 import { getTriggerTypeName } from "../utils/typeCodes";
+import { textResult } from "../utils/response";
 
 /** Trigger tools (CRUD) */
 export function registerTriggerTools(store: ContainerStore) {
@@ -22,18 +23,7 @@ export function registerTriggerTools(store: ContainerStore) {
           folder_name: resolveFolderName(trigger.parentFolderId, store.folders),
           notes: trigger.notes ?? null
         }));
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                { triggers, total_count: triggers.length },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({ triggers, total_count: triggers.length });
       }
     },
     {
@@ -65,25 +55,14 @@ export function registerTriggerTools(store: ContainerStore) {
             `Trigger not found. Provided: trigger_id=${trigger_id ?? "none"}, name=${name ?? "none"}`
           );
         }
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  ...trigger,
-                  type_name: getTriggerTypeName(trigger.type),
-                  folder_name: resolveFolderName(
-                    trigger.parentFolderId,
-                    store.folders
-                  )
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          ...trigger,
+          type_name: getTriggerTypeName(trigger.type),
+          folder_name: resolveFolderName(
+            trigger.parentFolderId,
+            store.folders
+          )
+        });
       }
     },
     {
@@ -107,22 +86,11 @@ export function registerTriggerTools(store: ContainerStore) {
           parentFolderId: params.folder_id,
           notes: params.notes
         });
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  status: "created",
-                  trigger,
-                  type_name: getTriggerTypeName(trigger.type)
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          status: "created",
+          trigger,
+          type_name: getTriggerTypeName(trigger.type)
+        });
       }
     },
     {
@@ -152,14 +120,7 @@ export function registerTriggerTools(store: ContainerStore) {
           trigger_id,
           updatesObj as Partial<Trigger>
         );
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({ status: "updated", trigger }, null, 2)
-            }
-          ]
-        };
+        return textResult({ status: "updated", trigger });
       }
     },
     {
@@ -171,14 +132,7 @@ export function registerTriggerTools(store: ContainerStore) {
       handler: async ({ trigger_id }: { trigger_id: string }) => {
         const deleted = store.deleteTrigger(trigger_id);
         if (!deleted) throw new Error(`Trigger not found: ${trigger_id}`);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({ status: "deleted", trigger_id }, null, 2)
-            }
-          ]
-        };
+        return textResult({ status: "deleted", trigger_id });
       }
     }
   ];

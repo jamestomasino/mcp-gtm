@@ -5,6 +5,8 @@ import {
   getTriggerTypeName,
   getVariableTypeName
 } from "../utils/typeCodes";
+import { textResult } from "../utils/response";
+import { ContainerNotLoadedError } from "../utils/errors";
 
 export function registerSearchTools(store: ContainerStore) {
   return [
@@ -36,6 +38,7 @@ export function registerSearchTools(store: ContainerStore) {
         entity_type?: string;
         case_sensitive?: boolean;
       }) => {
+        if (!store.isLoaded) throw new ContainerNotLoadedError();
         const et = entity_type ?? "all";
         const cs = case_sensitive ?? false;
 
@@ -122,22 +125,11 @@ export function registerSearchTools(store: ContainerStore) {
           }
         }
 
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  query,
-                  total_matches: results.length,
-                  results
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          query,
+          total_matches: results.length,
+          results
+        });
       }
     }
   ];

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Variable } from "../schemas/variable";
 import type { ContainerStore } from "../store";
 import { getVariableTypeName } from "../utils/typeCodes";
+import { textResult } from "../utils/response";
 
 /** Variable tools (CRUD + built-in) */
 export function registerVariableTools(store: ContainerStore) {
@@ -19,18 +20,7 @@ export function registerVariableTools(store: ContainerStore) {
           type_name: getVariableTypeName(v.type),
           notes: v.notes ?? null
         }));
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                { variables, total_count: variables.length },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({ variables, total_count: variables.length });
       }
     },
     {
@@ -62,21 +52,10 @@ export function registerVariableTools(store: ContainerStore) {
             `Variable not found. Provided: variable_id=${variable_id ?? "none"}, name=${name ?? "none"}`
           );
         }
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  ...variable,
-                  type_name: getVariableTypeName(variable.type)
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          ...variable,
+          type_name: getVariableTypeName(variable.type)
+        });
       }
     },
     {
@@ -109,22 +88,11 @@ export function registerVariableTools(store: ContainerStore) {
           notes: params.notes,
           parameter: params.parameters
         });
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  status: "created",
-                  variable,
-                  type_name: getVariableTypeName(variable.type)
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          status: "created",
+          variable,
+          type_name: getVariableTypeName(variable.type)
+        });
       }
     },
     {
@@ -164,14 +132,7 @@ export function registerVariableTools(store: ContainerStore) {
           variable_id,
           updatesObj as Partial<Variable>
         );
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({ status: "updated", variable }, null, 2)
-            }
-          ]
-        };
+        return textResult({ status: "updated", variable });
       }
     },
     {
@@ -183,14 +144,7 @@ export function registerVariableTools(store: ContainerStore) {
       handler: async ({ variable_id }: { variable_id: string }) => {
         const deleted = store.deleteVariable(variable_id);
         if (!deleted) throw new Error(`Variable not found: ${variable_id}`);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({ status: "deleted", variable_id }, null, 2)
-            }
-          ]
-        };
+        return textResult({ status: "deleted", variable_id });
       }
     },
     {
@@ -199,21 +153,10 @@ export function registerVariableTools(store: ContainerStore) {
         "List enabled built-in variables. Requires a loaded container.",
       parameters: z.object({}),
       handler: async () => {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  builtInVariables: store.builtInVariables,
-                  total_count: store.builtInVariables.length
-                },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({
+          builtInVariables: store.builtInVariables,
+          total_count: store.builtInVariables.length
+        });
       }
     }
   ];

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ContainerStore } from "../store";
+import { textResult } from "../utils/response";
 
 /** Server-side GTM tools (zones, clients, transformations, custom templates) */
 export function registerServerSideTools(store: ContainerStore) {
@@ -16,18 +17,7 @@ export function registerServerSideTools(store: ContainerStore) {
           type: zone.type,
           notes: zone.notes ?? null
         }));
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                { zones, total_count: zones.length },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({ zones, total_count: zones.length });
       }
     },
     {
@@ -59,11 +49,7 @@ export function registerServerSideTools(store: ContainerStore) {
             `Zone not found. Provided: zone_id=${zone_id ?? "none"}, name=${name ?? "none"}`
           );
         }
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(zone, null, 2) }
-          ]
-        };
+        return textResult(zone);
       }
     },
     {
@@ -78,18 +64,7 @@ export function registerServerSideTools(store: ContainerStore) {
           type: client.type,
           notes: client.notes ?? null
         }));
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                { clients, total_count: clients.length },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({ clients, total_count: clients.length });
       }
     },
     {
@@ -121,11 +96,7 @@ export function registerServerSideTools(store: ContainerStore) {
             `Client not found. Provided: client_id=${client_id ?? "none"}, name=${name ?? "none"}`
           );
         }
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(client, null, 2) }
-          ]
-        };
+        return textResult(client);
       }
     },
     {
@@ -140,18 +111,7 @@ export function registerServerSideTools(store: ContainerStore) {
           type: t.type,
           notes: t.notes ?? null
         }));
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                { transformations, total_count: transformations.length },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({ transformations, total_count: transformations.length });
       }
     },
     {
@@ -190,14 +150,7 @@ export function registerServerSideTools(store: ContainerStore) {
             `Transformation not found. Provided: transformation_id=${transformation_id ?? "none"}, name=${name ?? "none"}`
           );
         }
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(transformation, null, 2)
-            }
-          ]
-        };
+        return textResult(transformation);
       }
     },
     {
@@ -212,18 +165,7 @@ export function registerServerSideTools(store: ContainerStore) {
           type: t.type,
           notes: t.notes ?? null
         }));
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                { custom_templates: templates, total_count: templates.length },
-                null,
-                2
-              )
-            }
-          ]
-        };
+        return textResult({ custom_templates: templates, total_count: templates.length });
       }
     },
     {
@@ -257,11 +199,7 @@ export function registerServerSideTools(store: ContainerStore) {
             `Custom template not found. Provided: template_id=${template_id ?? "none"}, name=${name ?? "none"}`
           );
         }
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(template, null, 2) }
-          ]
-        };
+        return textResult(template);
       }
     }
   ];

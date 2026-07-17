@@ -4,7 +4,6 @@ import { ParameterListSchema } from "./parameter";
 
 /**
  * TriggerSchema — represents a GTM trigger.
- * Adapted from stape-io Zod schemas for the export JSON shape.
  */
 export const TriggerSchema = z
   .object({
