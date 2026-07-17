@@ -9,11 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/1jehuang/mcp-gtm"
+    "url": "https://github.com/jamestomasino/mcp-gtm"
   },
-  "homepage": "https://github.com/1jehuang/mcp-gtm#readme",
+  "homepage": "https://github.com/jamestomasino/mcp-gtm#readme",
   "bugs": {
-    "url": "https://github.com/1jehuang/mcp-gtm/issues"
+    "url": "https://github.com/jamestomasino/mcp-gtm/issues"
   },
   "author": "Jcode",
   "engines": {
