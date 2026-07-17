@@ -1,6 +1,9 @@
 {
   "name": "mcp-gtm",
   "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "MCP server for Google Tag Manager container JSON files. Zero auth, fully offline.",
   "type": "module",
   "exports": {
