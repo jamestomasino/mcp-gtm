@@ -41,10 +41,10 @@ Or configure in your MCP client:
 ### Tags
 | Tool | Description |
 |------|-------------|
-| `gtm_list_tags` | List all tags |
+| `gtm_list_tags` | List tags with trigger assignments and consent settings |
 | `gtm_get_tag` | Get tag by ID or name |
 | `gtm_create_tag` | Create a new tag |
-| `gtm_update_tag` | Update an existing tag |
+| `gtm_update_tag` | Update metadata, firing/blocking triggers, and additional consent checks |
 | `gtm_delete_tag` | Delete a tag |
 | `gtm_find_tags_by_type` | Find tags by type (e.g. gaawe) |
 
@@ -90,7 +90,7 @@ Or configure in your MCP client:
 | Tool | Description |
 |------|-------------|
 | `gtm_analyze_tag_firing_order` | Deterministic firing order, sequencing deps, conflicts |
-| `gtm_analyze_consent_setup` | Consent pattern detection, issue classification, recommendations |
+| `gtm_analyze_consent_setup` | Consent analysis aware of Google built-in checks, explicit checks, and GTM built-in triggers |
 | `gtm_get_tag_lifecycle` | Per-tag lifecycle phase, consent relationships, issues |
 
 ### Server-Side GTM
@@ -108,8 +108,8 @@ Or configure in your MCP client:
 ### Export
 | Tool | Description |
 |------|-------------|
-| `gtm_export_container` | Export container state to JSON |
-| `gtm_diff_containers` | Compare two container files |
+| `gtm_export_container` | Export container state while preserving version or workspace JSON format |
+| `gtm_diff_containers` | Compare version or workspace container files |
 
 ### Search
 | Tool | Description |

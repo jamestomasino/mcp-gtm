@@ -9,6 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = join(__dirname, "..", "fixtures");
 const SIMPLE_FIXTURE = join(FIXTURES_DIR, "simple.json");
 const COMPLEX_FIXTURE = join(FIXTURES_DIR, "complex.json");
+const WORKSPACE_FIXTURE = join(FIXTURES_DIR, "workspace-format.json");
 
 describe("Export tools", () => {
   let store: ContainerStore;
@@ -81,6 +82,18 @@ describe("Export tools", () => {
       expect(text.tags.removed.length).toBe(0);
       expect(text.triggers.added.length).toBe(0);
       expect(text.triggers.removed.length).toBe(0);
+    });
+
+    it("should read entities from canonical workspace exports", async () => {
+      const result = await tools.find((t) => t.name === "gtm_diff_containers")!.handler({
+        file_a: WORKSPACE_FIXTURE,
+        file_b: WORKSPACE_FIXTURE,
+      });
+      const text = JSON.parse(result.content[0].text);
+      expect(text.tags.count_a).toBeGreaterThan(0);
+      expect(text.tags.count_b).toBe(text.tags.count_a);
+      expect(text.triggers.count_a).toBeGreaterThan(0);
+      expect(text.variables.count_a).toBeGreaterThan(0);
     });
 
     it("should fail with invalid file path", async () => {

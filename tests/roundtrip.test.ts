@@ -7,6 +7,7 @@ import { ContainerStore } from "../src/store";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = join(__dirname, "fixtures");
 const SIMPLE_FIXTURE = join(FIXTURES_DIR, "simple.json");
+const WORKSPACE_FIXTURE = join(FIXTURES_DIR, "workspace-format.json");
 
 describe("Round-trip: load → modify → export → reload", () => {
   it("should preserve all entities after round-trip", () => {
@@ -55,6 +56,26 @@ describe("Round-trip: load → modify → export → reload", () => {
     expect(store2.containerInfo.accountId).toBe("12345678");
     expect(store2.containerInfo.defaultTimezone).toBe("America/New_York");
 
+    unlinkSync(outputPath);
+  });
+
+  it("should preserve Google's workspace export envelope", () => {
+    const store = new ContainerStore();
+    store.load(WORKSPACE_FIXTURE);
+    store.updateTag("1", { name: "Updated Workspace Tag" });
+
+    const outputPath = join(FIXTURES_DIR, "roundtrip_workspace.json");
+    store.exportTo(outputPath);
+    const exported = JSON.parse(readFileSync(outputPath, "utf-8"));
+
+    expect(exported.containerVersion.tag[0].name).toBe("Updated Workspace Tag");
+    expect(exported.containerVersion.container.tag).toBeUndefined();
+    expect(exported.containerVersion.variable).toBeDefined();
+    expect(exported.containerVersion.container.userDefinedVariable).toBeUndefined();
+
+    const reloaded = new ContainerStore();
+    reloaded.load(outputPath);
+    expect(reloaded.tags[0].name).toBe("Updated Workspace Tag");
     unlinkSync(outputPath);
   });
 

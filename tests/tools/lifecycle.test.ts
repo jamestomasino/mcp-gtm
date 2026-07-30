@@ -9,7 +9,7 @@ import {
   getTagLifecyclePhase,
   analyzeTagFiringOrder,
   analyzeConsentSetup,
-  getTagLifecycle,
+  getTagLifecycle
 } from "../../src/tools/lifecycle";
 import type { Tag } from "../../src/schemas/index";
 
@@ -22,7 +22,17 @@ describe("Lifecycle Tools", () => {
 
   describe("getFiringGroup", () => {
     it("classifies Google tags as group 1", () => {
-      const googleTypes = ["gaawe", "googtag", "ua", "awct", "gf", "dbm", "adm", "dfa", "rem"];
+      const googleTypes = [
+        "gaawe",
+        "googtag",
+        "ua",
+        "awct",
+        "gf",
+        "dbm",
+        "adm",
+        "dfa",
+        "rem"
+      ];
       for (const type of googleTypes) {
         const tag = { tagId: "1", name: "test", type, parameter: [] } as Tag;
         const result = getFiringGroup(tag);
@@ -32,28 +42,48 @@ describe("Lifecycle Tools", () => {
     });
 
     it("classifies Custom HTML as group 2", () => {
-      const tag = { tagId: "1", name: "test", type: "html", parameter: [] } as Tag;
+      const tag = {
+        tagId: "1",
+        name: "test",
+        type: "html",
+        parameter: []
+      } as Tag;
       const result = getFiringGroup(tag);
       expect(result.priority).toBe(2);
       expect(result.group).toBe("custom_html");
     });
 
     it("classifies Custom Image as group 3", () => {
-      const tag = { tagId: "1", name: "test", type: "img", parameter: [] } as Tag;
+      const tag = {
+        tagId: "1",
+        name: "test",
+        type: "img",
+        parameter: []
+      } as Tag;
       const result = getFiringGroup(tag);
       expect(result.priority).toBe(3);
       expect(result.group).toBe("custom_image");
     });
 
     it("classifies Custom Template as group 4", () => {
-      const tag = { tagId: "1", name: "test", type: "cvt_custom", parameter: [] } as Tag;
+      const tag = {
+        tagId: "1",
+        name: "test",
+        type: "cvt_custom",
+        parameter: []
+      } as Tag;
       const result = getFiringGroup(tag);
       expect(result.priority).toBe(4);
       expect(result.group).toBe("custom_template");
     });
 
     it("classifies unknown types as custom_template (fallback)", () => {
-      const tag = { tagId: "1", name: "test", type: "unknown_type", parameter: [] } as Tag;
+      const tag = {
+        tagId: "1",
+        name: "test",
+        type: "unknown_type",
+        parameter: []
+      } as Tag;
       const result = getFiringGroup(tag);
       expect(result.priority).toBe(4);
       expect(result.group).toBe("custom_template");
@@ -66,7 +96,9 @@ describe("Lifecycle Tools", () => {
     });
 
     it("detects consent tag by name", () => {
-      const consentTag = store.tags.find((t) => t.name === "Consent Mode - Default Denied");
+      const consentTag = store.tags.find(
+        (t) => t.name === "Consent Mode - Default Denied"
+      );
       expect(isConsentManagementTag(consentTag!)).toBe(true);
     });
 
@@ -76,7 +108,9 @@ describe("Lifecycle Tools", () => {
     });
 
     it("detects consent tag by parameters containing consent keywords", () => {
-      const consentTag = store.tags.find((t) => t.name === "Consent Mode - Default Denied");
+      const consentTag = store.tags.find(
+        (t) => t.name === "Consent Mode - Default Denied"
+      );
       expect(isConsentManagementTag(consentTag!)).toBe(true);
     });
   });
@@ -87,7 +121,9 @@ describe("Lifecycle Tools", () => {
     });
 
     it("detects consent variable by name", () => {
-      const consentVar = store.variables.find((v) => v.name === "Consent Status");
+      const consentVar = store.variables.find(
+        (v) => v.name === "Consent Status"
+      );
       expect(isConsentVariable(consentVar!)).toBe(true);
     });
 
@@ -97,7 +133,9 @@ describe("Lifecycle Tools", () => {
     });
 
     it("detects GDPR variable by name", () => {
-      const gdprVar = store.variables.find((v) => v.name === "GDPR Region Check");
+      const gdprVar = store.variables.find(
+        (v) => v.name === "GDPR Region Check"
+      );
       expect(isConsentVariable(gdprVar!)).toBe(true);
     });
   });
@@ -136,8 +174,8 @@ describe("Lifecycle Tools", () => {
         type: "html",
         parameter: [
           { key: "tagsToOverride", value: "2" },
-          { key: "otherKey", value: "otherValue" },
-        ],
+          { key: "otherKey", value: "otherValue" }
+        ]
       } as Tag;
       const deps = getSequencingDependencies(tag);
       expect(deps.firesAfter).toContain("2");
@@ -149,7 +187,7 @@ describe("Lifecycle Tools", () => {
         tagId: "1",
         name: "test",
         type: "html",
-        parameter: [{ key: "html", value: "<script></script>" }],
+        parameter: [{ key: "html", value: "<script></script>" }]
       } as Tag;
       const deps = getSequencingDependencies(tag);
       expect(deps.firesAfter).toEqual([]);
@@ -176,7 +214,9 @@ describe("Lifecycle Tools", () => {
       const lastGoogleIndex = result.firing_order
         .filter((t) => t.firing_group === "google")
         .reduce((max, t) => {
-          const idx = result.firing_order.findIndex((o) => o.tag_id === t.tag_id);
+          const idx = result.firing_order.findIndex(
+            (o) => o.tag_id === t.tag_id
+          );
           return idx > max ? idx : max;
         }, -1);
       expect(firstHtmlIndex).toBeGreaterThan(lastGoogleIndex);
@@ -190,7 +230,9 @@ describe("Lifecycle Tools", () => {
       const lastHtmlIndex = result.firing_order
         .filter((t) => t.firing_group === "custom_html")
         .reduce((max, t) => {
-          const idx = result.firing_order.findIndex((o) => o.tag_id === t.tag_id);
+          const idx = result.firing_order.findIndex(
+            (o) => o.tag_id === t.tag_id
+          );
           return idx > max ? idx : max;
         }, -1);
       expect(firstImgIndex).toBeGreaterThan(lastHtmlIndex);
@@ -242,7 +284,9 @@ describe("Lifecycle Tools", () => {
       it("identifies consent management tags", () => {
         const result = analyzeConsentSetup(store);
         expect(result.consent_management_tags.length).toBeGreaterThan(0);
-        expect(result.consent_management_tags[0].name).toBe("Consent Mode - Default Denied");
+        expect(result.consent_management_tags[0].name).toBe(
+          "Consent Mode - Default Denied"
+        );
       });
 
       it("identifies consent variables", () => {
@@ -255,8 +299,12 @@ describe("Lifecycle Tools", () => {
       it("identifies consent blocking triggers", () => {
         const result = analyzeConsentSetup(store);
         expect(result.consent_blocking_triggers.length).toBeGreaterThan(0);
-        const blockingTriggerNames = result.consent_blocking_triggers.map((t) => t.name);
-        expect(blockingTriggerNames).toContain("Consent Granted - Block Until Accepted");
+        const blockingTriggerNames = result.consent_blocking_triggers.map(
+          (t) => t.name
+        );
+        expect(blockingTriggerNames).toContain(
+          "Consent Granted - Block Until Accepted"
+        );
       });
 
       it("reports consent patterns", () => {
@@ -269,27 +317,65 @@ describe("Lifecycle Tools", () => {
       it("flags unprotected data collection tags", () => {
         const result = analyzeConsentSetup(store);
         const criticalIssues = result.issues.filter(
-          (i) => i.severity === "critical" && i.category === "unprotected_data_collection"
+          (i) =>
+            i.severity === "critical" &&
+            i.category === "unprotected_data_collection"
         );
         expect(criticalIssues.length).toBeGreaterThan(0);
-        // Google Ads Conversion (tag 4) has no blocking trigger
+        // Non-Google HTML tags require explicit consent protection.
         const affectedTags = criticalIssues[0]?.affected_tags ?? [];
-        expect(affectedTags).toContain("Google Ads Conversion");
+        expect(affectedTags).toContain("Hotjar Tracking");
+        expect(affectedTags).not.toContain("Google Ads Conversion");
+        expect(affectedTags).not.toContain("Tag With No Firing Triggers");
+      });
+
+      it("accepts GTM additional consent checks as protection", () => {
+        const hotjar = store.tags.find((t) => t.name === "Hotjar Tracking")!;
+        hotjar.consentSettings = {
+          consentStatus: "NEEDED",
+          consentType: {
+            type: "LIST",
+            list: [{ type: "TEMPLATE", value: "analytics_storage" }]
+          }
+        };
+
+        const result = analyzeConsentSetup(store);
+        const issue = result.issues.find(
+          (i) => i.category === "unprotected_data_collection"
+        );
+        expect(issue?.affected_tags ?? []).not.toContain("Hotjar Tracking");
+      });
+
+      it("does not treat NOT_SET consent status as protection", () => {
+        const hotjar = store.tags.find((t) => t.name === "Hotjar Tracking")!;
+        hotjar.consentSettings = { consentStatus: "NOT_SET" };
+
+        const result = analyzeConsentSetup(store);
+        const issue = result.issues.find(
+          (i) => i.category === "unprotected_data_collection"
+        );
+        expect(issue?.affected_tags).toContain("Hotjar Tracking");
       });
 
       it("flags orphaned blocking trigger references", () => {
         const result = analyzeConsentSetup(store);
         const orphanIssues = result.issues.filter(
-          (i) => i.severity === "critical" && i.category === "orphaned_blocking_reference"
+          (i) =>
+            i.severity === "critical" &&
+            i.category === "orphaned_blocking_reference"
         );
         expect(orphanIssues.length).toBeGreaterThan(0);
-        expect(orphanIssues[0].affected_tags).toContain("Tag With Orphaned Blocking Trigger");
+        expect(orphanIssues[0].affected_tags).toContain(
+          "Tag With Orphaned Blocking Trigger"
+        );
       });
 
       it("provides a recommendation summary", () => {
         const result = analyzeConsentSetup(store);
         expect(result.recommendation_summary.length).toBeGreaterThan(0);
-        expect(result.recommendation_summary.toLowerCase()).toContain("critical");
+        expect(result.recommendation_summary.toLowerCase()).toContain(
+          "critical"
+        );
       });
 
       it("each issue has severity, category, and message", () => {
@@ -375,7 +461,7 @@ describe("Lifecycle Tools", () => {
 
     it("flags unprotected data collection tag", () => {
       const result = getTagLifecycle(
-        store.tags.find((t) => t.tagId === "4")!, // Google Ads - no blocking trigger
+        store.tags.find((t) => t.tagId === "6")!, // Custom HTML - no consent protection
         store
       );
       const unprotected = result.issues.find(
@@ -383,6 +469,27 @@ describe("Lifecycle Tools", () => {
       );
       expect(unprotected).toBeDefined();
       expect(unprotected!.severity).toBe("critical");
+    });
+
+    it("recognizes built-in Google consent checks", () => {
+      const result = getTagLifecycle(
+        store.tags.find((t) => t.tagId === "4")!, // Google Ads - no blocking trigger
+        store
+      );
+      expect(
+        result.issues.find((i) => i.category === "unprotected_data_collection")
+      ).toBeUndefined();
+      expect(result.consent_related).toBe(true);
+    });
+
+    it("does not flag GTM built-in trigger IDs as orphaned", () => {
+      const tag = store.tags.find((t) => t.tagId === "6")!;
+      tag.firingTriggerId = ["2147479553"];
+
+      const result = getTagLifecycle(tag, store);
+      expect(
+        result.issues.find((i) => i.category === "orphaned_firing_reference")
+      ).toBeUndefined();
     });
 
     it("flags tag with no firing triggers", () => {
@@ -412,9 +519,7 @@ describe("Lifecycle Tools", () => {
         store.tags.find((t) => t.tagId === "8")!,
         store
       );
-      const disabled = result.issues.find(
-        (i) => i.category === "disabled_tag"
-      );
+      const disabled = result.issues.find((i) => i.category === "disabled_tag");
       expect(disabled).toBeDefined();
       expect(disabled!.severity).toBe("info");
     });
@@ -432,7 +537,12 @@ describe("Lifecycle Tools", () => {
     it("throws for non-existent tag", () => {
       expect(() => {
         getTagLifecycle(
-          { tagId: "999", name: "nonexistent", type: "html", parameter: [] } as Tag,
+          {
+            tagId: "999",
+            name: "nonexistent",
+            type: "html",
+            parameter: []
+          } as Tag,
           store
         );
       }).not.toThrow(); // getTagLifecycle itself doesn't throw for missing tags, it just returns data
@@ -445,8 +555,12 @@ describe("Lifecycle Tools", () => {
     });
 
     it("classifies consent tags as consent_management", () => {
-      const consentTag = store.tags.find((t) => t.name === "Consent Mode - Default Denied");
-      expect(getTagLifecyclePhase(consentTag!, store)).toBe("consent_management");
+      const consentTag = store.tags.find(
+        (t) => t.name === "Consent Mode - Default Denied"
+      );
+      expect(getTagLifecyclePhase(consentTag!, store)).toBe(
+        "consent_management"
+      );
     });
 
     it("classifies GA4 tags as data_collection", () => {
@@ -455,12 +569,26 @@ describe("Lifecycle Tools", () => {
     });
 
     it("classifies HTML tags as data_collection", () => {
-      const htmlTag = store.tags.find((t) => t.name === "Facebook Pixel PageView");
+      const htmlTag = store.tags.find(
+        (t) => t.name === "Facebook Pixel PageView"
+      );
       expect(getTagLifecyclePhase(htmlTag!, store)).toBe("data_collection");
     });
 
+    it("does not classify local Custom HTML utilities as data collection", () => {
+      const utilityTag = store.tags.find(
+        (t) => t.name === "Tag With No Firing Triggers"
+      );
+      expect(getTagLifecyclePhase(utilityTag!, store)).toBe("other");
+    });
+
     it("classifies unknown types as other", () => {
-      const unknownTag = { tagId: "99", name: "test", type: "unknown", parameter: [] } as Tag;
+      const unknownTag = {
+        tagId: "99",
+        name: "test",
+        type: "unknown",
+        parameter: []
+      } as Tag;
       expect(getTagLifecyclePhase(unknownTag, store)).toBe("other");
     });
   });

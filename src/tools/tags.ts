@@ -11,7 +11,7 @@ export function registerTagTools(store: ContainerStore) {
     {
       name: "gtm_list_tags",
       description:
-        "List all tags with summary info (name, type, enabled, folder). Requires a loaded container.",
+        "List all tags with summary info, trigger assignments, and consent settings. Requires a loaded container.",
       parameters: z.object({}),
       handler: async () => {
         const tags = store.tags.map((tag) => ({
@@ -22,6 +22,17 @@ export function registerTagTools(store: ContainerStore) {
           enabled: tag.enabled !== false,
           folder_id: tag.parentFolderId ?? null,
           folder_name: resolveFolderName(tag.parentFolderId, store.folders),
+          firing_trigger_ids: tag.firingTriggerId ?? [],
+          firing_trigger_names: resolveTriggerNames(
+            tag.firingTriggerId ?? [],
+            store.triggers
+          ),
+          blocking_trigger_ids: tag.blockingTriggerId ?? [],
+          blocking_trigger_names: resolveTriggerNames(
+            tag.blockingTriggerId ?? [],
+            store.triggers
+          ),
+          consent_settings: tag.consentSettings ?? null,
           notes: tag.notes ?? null
         }));
         return textResult({ tags, total_count: tags.length });
@@ -106,7 +117,21 @@ export function registerTagTools(store: ContainerStore) {
         name: z.string().optional().describe("New tag name"),
         folder_id: z.string().optional().describe("New parent folder ID"),
         notes: z.string().optional().describe("New notes"),
-        enabled: z.boolean().optional().describe("Enable or disable the tag")
+        enabled: z.boolean().optional().describe("Enable or disable the tag"),
+        firing_trigger_ids: z
+          .array(z.string())
+          .optional()
+          .describe("Replace the tag's firing trigger IDs"),
+        blocking_trigger_ids: z
+          .array(z.string())
+          .optional()
+          .describe("Replace the tag's blocking trigger IDs"),
+        consent_types: z
+          .array(z.string())
+          .optional()
+          .describe(
+            "Replace required additional consent types; an empty array marks no additional consent required"
+          )
       }),
       handler: async ({
         tag_id,
@@ -115,7 +140,7 @@ export function registerTagTools(store: ContainerStore) {
         tag_id: string;
         [key: string]: unknown;
       }) => {
-        const updatesObj: Record<string, string | boolean> = {};
+        const updatesObj: Record<string, unknown> = {};
         if (updates.name !== undefined)
           updatesObj.name = updates.name as string;
         if (updates.folder_id !== undefined)
@@ -124,6 +149,27 @@ export function registerTagTools(store: ContainerStore) {
           updatesObj.notes = updates.notes as string;
         if (updates.enabled !== undefined)
           updatesObj.enabled = updates.enabled as boolean;
+        if (updates.firing_trigger_ids !== undefined)
+          updatesObj.firingTriggerId = updates.firing_trigger_ids as string[];
+        if (updates.blocking_trigger_ids !== undefined)
+          updatesObj.blockingTriggerId =
+            updates.blocking_trigger_ids as string[];
+        if (updates.consent_types !== undefined) {
+          const consentTypes = updates.consent_types as string[];
+          updatesObj.consentSettings =
+            consentTypes.length === 0
+              ? { consentStatus: "NOT_NEEDED" }
+              : {
+                  consentStatus: "NEEDED",
+                  consentType: {
+                    type: "LIST",
+                    list: consentTypes.map((value) => ({
+                      type: "TEMPLATE",
+                      value
+                    }))
+                  }
+                };
+        }
         const tag = store.updateTag(tag_id, updatesObj as Partial<Tag>);
         return textResult({ status: "updated", tag });
       }

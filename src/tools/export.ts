@@ -53,7 +53,25 @@ export function registerExportTools(store: ContainerStore) {
               `Invalid GTM container at ${path}: ${result.error.errors.map((e) => e.message).join("; ")}`
             );
           }
-          return result.data.containerVersion.container;
+          const cv = result.data.containerVersion as unknown as Record<
+            string,
+            unknown
+          >;
+          const container = cv.container as Record<string, unknown>;
+          return {
+            tag: (cv.tag ?? container.tag ?? []) as Array<{
+              tagId: string;
+              name: string;
+            }>,
+            trigger: (cv.trigger ?? container.trigger ?? []) as Array<{
+              triggerId: string;
+              name: string;
+            }>,
+            userDefinedVariable: (cv.variable ??
+              cv.userDefinedVariable ??
+              container.userDefinedVariable ??
+              []) as Array<{ variableId: string; name: string }>
+          };
         };
 
         const containerA = parseContainer(file_a);

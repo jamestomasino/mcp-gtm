@@ -377,7 +377,49 @@ export class ContainerStore {
 
   /** Export current state to a JSON file */
   exportTo(filePath: string): void {
-    writeFileSync(filePath, JSON.stringify(this.data, null, 2), "utf-8");
+    const exported = structuredClone(this.data);
+    const source = this._sourcePath
+      ? JSON.parse(readFileSync(this._sourcePath, "utf-8"))
+      : null;
+    const sourceCv = source?.containerVersion as
+      | Record<string, unknown>
+      | undefined;
+    const cv = exported.containerVersion as unknown as Record<string, unknown>;
+    const container = cv.container as Record<string, unknown>;
+
+    // Preserve Google's canonical workspace-export envelope. Internally the
+    // store normalizes entities into containerVersion.container, but GTM
+    // workspace files keep them directly under containerVersion.
+    const isWorkspaceExport =
+      sourceCv !== undefined &&
+      ["tag", "trigger", "variable", "folder", "builtInVariable"].some(
+        (key) => key in sourceCv
+      );
+    if (isWorkspaceExport) {
+      const entityMap: Array<[string, string]> = [
+        ["tag", "tag"],
+        ["trigger", "trigger"],
+        ["variable", "userDefinedVariable"],
+        ["folder", "folder"],
+        ["builtInVariable", "builtInVariable"],
+        ["zone", "zone"],
+        ["client", "client"],
+        ["transformation", "transformation"],
+        ["customTemplate", "customTemplate"],
+        ["gtagConfig", "gtagConfig"]
+      ];
+      for (const [dstKey, srcKey] of entityMap) {
+        const value = container[srcKey];
+        if (dstKey in sourceCv || (Array.isArray(value) && value.length > 0)) {
+          cv[dstKey] = value;
+        } else {
+          delete cv[dstKey];
+        }
+        delete container[srcKey];
+      }
+    }
+
+    writeFileSync(filePath, JSON.stringify(exported, null, 2), "utf-8");
   }
 
   /** Full Zod validation — returns all issues */

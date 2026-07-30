@@ -29,6 +29,11 @@ describe("Tag tools", () => {
       expect(text.tags[0]).toHaveProperty("type_name");
       expect(text.tags[0]).toHaveProperty("folder_name");
       expect(text.tags[0]).toHaveProperty("enabled");
+      expect(text.tags[0]).toHaveProperty("firing_trigger_ids");
+      expect(text.tags[0]).toHaveProperty("firing_trigger_names");
+      expect(text.tags[0]).toHaveProperty("blocking_trigger_ids");
+      expect(text.tags[0]).toHaveProperty("blocking_trigger_names");
+      expect(text.tags[0]).toHaveProperty("consent_settings");
     });
   });
 
@@ -87,6 +92,40 @@ describe("Tag tools", () => {
       const text = JSON.parse(result.content[0].text);
       expect(text.status).toBe("updated");
       expect(text.tag.name).toBe("Updated Tag");
+    });
+
+    it("should update firing triggers and additional consent types", async () => {
+      const result = await tools
+        .find((t) => t.name === "gtm_update_tag")!
+        .handler({
+          tag_id: "1",
+          firing_trigger_ids: ["2"],
+          blocking_trigger_ids: ["3"],
+          consent_types: ["ad_storage"]
+        });
+      const text = JSON.parse(result.content[0].text);
+      expect(text.tag.firingTriggerId).toEqual(["2"]);
+      expect(text.tag.blockingTriggerId).toEqual(["3"]);
+      expect(text.tag.consentSettings).toEqual({
+        consentStatus: "NEEDED",
+        consentType: {
+          type: "LIST",
+          list: [{ type: "TEMPLATE", value: "ad_storage" }]
+        }
+      });
+    });
+
+    it("should mark no additional consent required with an empty consent list", async () => {
+      const result = await tools
+        .find((t) => t.name === "gtm_update_tag")!
+        .handler({
+          tag_id: "1",
+          consent_types: []
+        });
+      const text = JSON.parse(result.content[0].text);
+      expect(text.tag.consentSettings).toEqual({
+        consentStatus: "NOT_NEEDED"
+      });
     });
 
     it("should throw when tag not found", async () => {

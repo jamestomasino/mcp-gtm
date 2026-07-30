@@ -80,6 +80,26 @@ const CONSENT_KEYWORDS = [
   "data_layer_version"
 ];
 
+/**
+ * Google tag templates that implement their own built-in Consent Mode checks.
+ * These tags should not be treated as unprotected merely because they do not
+ * have a user-defined blocking trigger.
+ */
+const GOOGLE_CONSENT_AWARE_TAG_TYPES = new Set([
+  "gaawe",
+  "googtag",
+  "gclidw",
+  "awct",
+  "flc",
+  "fls",
+  "ua",
+  "gf",
+  "dbm",
+  "adm",
+  "dfa",
+  "rem"
+]);
+
 function containsConsentKeyword(value: unknown): boolean {
   if (typeof value !== "string") return false;
   const lower = value.toLowerCase();
@@ -96,6 +116,35 @@ function hasConsentReferences(params: unknown[]): boolean {
   return params.some(walk);
 }
 
+function hasAdditionalConsentChecks(tag: Tag): boolean {
+  if (tag.consentSettings?.consentStatus !== "NEEDED") return false;
+
+  const consentType = tag.consentSettings.consentType;
+  if (Array.isArray(consentType)) return consentType.length > 0;
+  if (!consentType || typeof consentType !== "object") return false;
+
+  const list = (consentType as { list?: unknown }).list;
+  return Array.isArray(list) && list.length > 0;
+}
+
+function isConsentProtectedTag(tag: Tag): boolean {
+  return (
+    GOOGLE_CONSENT_AWARE_TAG_TYPES.has(tag.type) ||
+    hasAdditionalConsentChecks(tag) ||
+    (tag.blockingTriggerId ?? []).length > 0
+  );
+}
+
+/**
+ * GTM's built-in page lifecycle triggers are referenced by reserved, high
+ * numeric IDs and are intentionally omitted from exported trigger arrays.
+ */
+function isBuiltInTriggerId(id: string): boolean {
+  if (!/^\d+$/.test(id)) return false;
+  const numericId = Number(id);
+  return numericId >= 2_147_470_000 && numericId <= 2_147_483_647;
+}
+
 function isLikelyConsentBlockingTrigger(
   trigger: Trigger,
   store: ContainerStore
@@ -110,10 +159,9 @@ function isLikelyConsentBlockingTrigger(
     }
   }
 
-  const dataCollectionTypes = ["gaawe", "googtag", "awct", "ua", "html", "img"];
   for (const tag of store.tags) {
     if (
-      dataCollectionTypes.includes(tag.type) &&
+      isLikelyDataCollectionTag(tag) &&
       (tag.blockingTriggerId ?? []).includes(trigger.triggerId)
     ) {
       return true;
@@ -162,7 +210,25 @@ function getSequencingDependencies(tag: Tag): {
 // Data Collection Tag Types
 // ---------------------------------------------------------------------------
 
-const DATA_COLLECTION_TYPES = ["gaawe", "googtag", "awct", "ua", "html", "img"];
+function isLikelyDataCollectionTag(tag: Tag): boolean {
+  if (GOOGLE_CONSENT_AWARE_TAG_TYPES.has(tag.type) || tag.type === "img") {
+    return true;
+  }
+  if (tag.type !== "html") return false;
+
+  const serializedParameters = JSON.stringify(tag.parameter ?? []);
+  return [
+    /https?:\/\//i,
+    /(^|[^:])\/\/[a-z0-9]/i,
+    /\b(?:fetch|sendBeacon)\s*\(/i,
+    /\bXMLHttpRequest\b/i,
+    /\bnew\s+Image\s*\(/i,
+    /\.src\s*=/i,
+    /createElement\s*\(\s*["'](?:script|img|iframe)["']/i,
+    /\b(?:fbq|gtag|hj|lintrk|pintrk|snaptr|ttq|twq)\s*[.(]/i,
+    /\buetq\b/i
+  ].some((pattern) => pattern.test(serializedParameters));
+}
 
 // ---------------------------------------------------------------------------
 // Issue Classification
@@ -354,8 +420,8 @@ function analyzeConsentSetup(store: ContainerStore): {
   if (consentDetected) {
     const unprotectedTags = store.tags.filter(
       (tag) =>
-        DATA_COLLECTION_TYPES.includes(tag.type) &&
-        (tag.blockingTriggerId ?? []).length === 0 &&
+        isLikelyDataCollectionTag(tag) &&
+        !isConsentProtectedTag(tag) &&
         tag.enabled !== false
     );
 
@@ -363,10 +429,10 @@ function analyzeConsentSetup(store: ContainerStore): {
       issues.push({
         severity: "critical",
         category: "unprotected_data_collection",
-        message: `${unprotectedTags.length} data collection tag(s) have no blocking triggers despite consent management being present. These tags may fire before consent is granted.`,
+        message: `${unprotectedTags.length} non-Google data collection tag(s) have no consent protection despite consent management being present. These tags may fire before consent is granted.`,
         affected_tags: unprotectedTags.map((t) => t.name),
         recommendation:
-          "Add a consent-blocking trigger to these tags to prevent firing before consent is granted."
+          "Add GTM additional consent checks or use a consent-aware firing/blocking trigger for these tags."
       });
     }
   }
@@ -393,7 +459,10 @@ function analyzeConsentSetup(store: ContainerStore): {
 
   for (const tag of store.tags) {
     for (const blockId of tag.blockingTriggerId ?? []) {
-      if (!store.triggers.find((t) => t.triggerId === blockId)) {
+      if (
+        !isBuiltInTriggerId(blockId) &&
+        !store.triggers.find((t) => t.triggerId === blockId)
+      ) {
         issues.push({
           severity: "critical",
           category: "orphaned_blocking_reference",
@@ -410,7 +479,7 @@ function analyzeConsentSetup(store: ContainerStore): {
       const consentGroup = getFiringGroup(consentTag);
       for (const dataTag of store.tags) {
         if (
-          DATA_COLLECTION_TYPES.includes(dataTag.type) &&
+          isLikelyDataCollectionTag(dataTag) &&
           dataTag.tagId !== consentTag.tagId
         ) {
           const dataGroup = getFiringGroup(dataTag);
@@ -441,7 +510,7 @@ function analyzeConsentSetup(store: ContainerStore): {
       "Consent management is configured with minor issues. Review timing and scope recommendations.";
   } else {
     recommendationSummary =
-      "Consent management appears properly configured. All data collection tags have blocking triggers and consent tags fire in the correct lifecycle phase.";
+      "Consent management appears properly configured. Data collection tags use built-in Google consent checks or explicit consent protection, and consent tags fire in the correct lifecycle phase.";
   }
 
   return {
@@ -461,7 +530,7 @@ function analyzeConsentSetup(store: ContainerStore): {
 
 function getTagLifecyclePhase(tag: Tag, _store: ContainerStore): string {
   if (isConsentManagementTag(tag)) return "consent_management";
-  if (DATA_COLLECTION_TYPES.includes(tag.type)) return "data_collection";
+  if (isLikelyDataCollectionTag(tag)) return "data_collection";
   return "other";
 }
 
@@ -520,9 +589,10 @@ function getTagLifecycle(
 
   const lifecyclePhase = getTagLifecyclePhase(tag, store);
 
-  const tagHasConsentGating =
-    tag.consentSettings?.consentStatus &&
-    tag.consentSettings.consentStatus !== "NOT_NEEDED";
+  const tagHasConsentGating = hasAdditionalConsentChecks(tag);
+  const tagHasBuiltInConsentChecks = GOOGLE_CONSENT_AWARE_TAG_TYPES.has(
+    tag.type
+  );
 
   const hasConsentSetup =
     store.tags.some(isConsentManagementTag) ||
@@ -532,19 +602,23 @@ function getTagLifecycle(
   if (
     lifecyclePhase === "data_collection" &&
     hasConsentSetup &&
-    blockingTriggers.length === 0 &&
-    !tagHasConsentGating
+    !isConsentProtectedTag(tag)
   ) {
     issues.push({
       severity: "critical",
       category: "unprotected_data_collection",
-      message: `This data collection tag has no blocking triggers in a consent-enabled container. It may fire before consent is granted.`,
-      recommendation: "Add a consent-blocking trigger."
+      message:
+        "This non-Google data collection tag has no consent protection in a consent-enabled container. It may fire before consent is granted.",
+      recommendation:
+        "Add GTM additional consent checks or use a consent-aware firing/blocking trigger."
     });
   }
 
   for (const ft of firingTriggers) {
-    if (!store.triggers.find((t) => t.triggerId === ft.id)) {
+    if (
+      !isBuiltInTriggerId(ft.id) &&
+      !store.triggers.find((t) => t.triggerId === ft.id)
+    ) {
       issues.push({
         severity: "critical",
         category: "orphaned_firing_reference",
@@ -555,7 +629,10 @@ function getTagLifecycle(
   }
 
   for (const bt of blockingTriggers) {
-    if (!store.triggers.find((t) => t.triggerId === bt.id)) {
+    if (
+      !isBuiltInTriggerId(bt.id) &&
+      !store.triggers.find((t) => t.triggerId === bt.id)
+    ) {
       issues.push({
         severity: "critical",
         category: "orphaned_blocking_reference",
@@ -626,6 +703,7 @@ function getTagLifecycle(
     consent_related:
       isConsentManagementTag(tag) ||
       tagHasConsentGating ||
+      tagHasBuiltInConsentChecks ||
       blockingTriggers.some((bt) => {
         const trig = store.triggers.find((t) => t.triggerId === bt.id);
         return trig && isLikelyConsentBlockingTrigger(trig, store);
