@@ -86,7 +86,10 @@ export class ContainerStore {
       throw new Error(`Invalid GTM container JSON: ${errors}`);
     }
 
-    this._data = result.data;
+    // Keep the validated source object rather than Zod's parsed output.
+    // Schema defaults are useful for validation, but materializing them here
+    // would make untouched GTM entities differ after a load/export round trip.
+    this._data = parsed as GtmExport;
     this._sourcePath = filePath;
     // Clear undo/redo stacks on load
     this._undoStack = [];
@@ -279,10 +282,10 @@ export class ContainerStore {
 
     this.data.containerVersion.container.tag = [
       ...this.tags.slice(0, index),
-      result.data,
+      updated as Tag,
       ...this.tags.slice(index + 1)
     ];
-    return result.data;
+    return updated as Tag;
   }
 
   /** Update a trigger by ID */

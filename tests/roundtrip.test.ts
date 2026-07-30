@@ -19,7 +19,7 @@ describe("Round-trip: load → modify → export → reload", () => {
       name: "Round Trip Tag",
       type: "html",
       enabled: true,
-      firingTriggerId: ["1"],
+      firingTriggerId: ["1"]
     });
     store1.updateTrigger("1", { name: "Modified All Pages" });
     store1.deleteVariable("2");
@@ -35,7 +35,9 @@ describe("Round-trip: load → modify → export → reload", () => {
     // Verify modifications persisted
     expect(store2.tags.length).toBe(4);
     expect(store2.tags.find((t) => t.name === "Round Trip Tag")).toBeDefined();
-    expect(store2.triggers.find((t) => t.triggerId === "1")?.name).toBe("Modified All Pages");
+    expect(store2.triggers.find((t) => t.triggerId === "1")?.name).toBe(
+      "Modified All Pages"
+    );
     expect(store2.variables.length).toBe(1);
     expect(store2.variables.find((v) => v.variableId === "2")).toBeUndefined();
 
@@ -69,13 +71,31 @@ describe("Round-trip: load → modify → export → reload", () => {
     const exported = JSON.parse(readFileSync(outputPath, "utf-8"));
 
     expect(exported.containerVersion.tag[0].name).toBe("Updated Workspace Tag");
+    expect(exported.containerVersion.tag[0].enabled).toBeUndefined();
+    expect(exported.containerVersion.tag[0].blockingTriggerId).toBeUndefined();
+    expect(exported.containerVersion.tag[0].blockingTagId).toBeUndefined();
     expect(exported.containerVersion.container.tag).toBeUndefined();
     expect(exported.containerVersion.variable).toBeDefined();
-    expect(exported.containerVersion.container.userDefinedVariable).toBeUndefined();
+    expect(
+      exported.containerVersion.container.userDefinedVariable
+    ).toBeUndefined();
 
     const reloaded = new ContainerStore();
     reloaded.load(outputPath);
     expect(reloaded.tags[0].name).toBe("Updated Workspace Tag");
+    unlinkSync(outputPath);
+  });
+
+  it("should not materialize schema defaults on untouched workspace entities", () => {
+    const store = new ContainerStore();
+    store.load(WORKSPACE_FIXTURE);
+
+    const outputPath = join(FIXTURES_DIR, "roundtrip_workspace_exact.json");
+    store.exportTo(outputPath);
+
+    const source = JSON.parse(readFileSync(WORKSPACE_FIXTURE, "utf-8"));
+    const exported = JSON.parse(readFileSync(outputPath, "utf-8"));
+    expect(exported).toEqual(source);
     unlinkSync(outputPath);
   });
 
@@ -98,7 +118,11 @@ describe("Round-trip: load → modify → export → reload", () => {
     // Cycle 3
     const store3 = new ContainerStore();
     store3.load(path2);
-    store3.createVariable({ name: "New Var", type: "v", parameter: [{ key: "name", value: "test" }] });
+    store3.createVariable({
+      name: "New Var",
+      type: "v",
+      parameter: [{ key: "name", value: "test" }]
+    });
 
     expect(store3.tags.length).toBe(4); // 3 original + 1
     expect(store3.triggers.length).toBe(4); // 3 original + 1
@@ -124,14 +148,24 @@ describe("CRUD edge cases", () => {
   });
 
   it("should allow explicit ID on create", () => {
-    const tag = store.createTag({ tagId: "100", name: "Explicit ID", type: "html" });
+    const tag = store.createTag({
+      tagId: "100",
+      name: "Explicit ID",
+      type: "html"
+    });
     expect(tag.tagId).toBe("100");
   });
 
   it("should throw when updating non-existent entity", () => {
-    expect(() => store.updateTag("999", { name: "nope" })).toThrow("Tag not found");
-    expect(() => store.updateTrigger("999", { name: "nope" })).toThrow("Trigger not found");
-    expect(() => store.updateVariable("999", { name: "nope" })).toThrow("Variable not found");
+    expect(() => store.updateTag("999", { name: "nope" })).toThrow(
+      "Tag not found"
+    );
+    expect(() => store.updateTrigger("999", { name: "nope" })).toThrow(
+      "Trigger not found"
+    );
+    expect(() => store.updateVariable("999", { name: "nope" })).toThrow(
+      "Variable not found"
+    );
   });
 
   it("should handle entity with all optional fields", () => {
@@ -145,8 +179,8 @@ describe("CRUD edge cases", () => {
       notes: "A fully specified tag",
       parameter: [
         { key: "configurationId", value: "G-TEST" },
-        { key: "eventName", value: "test_event" },
-      ],
+        { key: "eventName", value: "test_event" }
+      ]
     });
     expect(tag.name).toBe("Full Tag");
     expect(tag.firingTriggerId).toEqual(["1", "2"]);
